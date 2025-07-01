@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kitops-config
+  namespace: kitops
+data:
+  NODE_ENV: "production"
+  API_URL: "https://api.kitops.com"
+  FRONTEND_URL: "https://app.kitops.com"
+  DB_HOST: "kitops-postgres"
+  DB_PORT: "5432"
+  DB_NAME: "kitops"
+  REDIS_HOST: "kitops-redis"
+  REDIS_PORT: "6379"

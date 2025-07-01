@@ -1,0 +1,69 @@
+[
+  {
+    "id": "doc-001",
+    "userId": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "Standard Service Agreement Template",
+    "type": "contract",
+    "status": "approved",
+    "content": "# SERVICE AGREEMENT\n\nThis Service Agreement (\"Agreement\") is entered into on {{date}} between {{client.company}} (\"Client\") and {{provider.company}} (\"Provider\").\n\n## 1. SERVICES\nProvider agrees to provide the following services:\n{{services.description}}\n\n## 2. COMPENSATION\nClient agrees to pay Provider {{payment.amount}} for the services described above.\n\n## 3. TIMELINE\nServices will be completed by {{timeline.end_date}}.\n\n## 4. TERMS AND CONDITIONS\n- Payment terms: {{payment.terms}}\n- Cancellation policy: {{cancellation.policy}}\n- Intellectual property: {{ip.terms}}\n\nBy signing below, both parties agree to the terms of this agreement.\n\n_________________________\nClient Signature\n\n_________________________\nProvider Signature",
+    "templateId": null,
+    "metadata": {
+      "variables": [
+        "date",
+        "client.company",
+        "provider.company",
+        "services.description",
+        "payment.amount",
+        "timeline.end_date",
+        "payment.terms",
+        "cancellation.policy",
+        "ip.terms"
+      ]
+    },
+    "isTemplate": true,
+    "tags": ["contract", "template", "service-agreement"]
+  },
+  {
+    "id": "doc-002",
+    "userId": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "Invoice Template",
+    "type": "invoice",
+    "status": "approved",
+    "content": "# INVOICE\n\n**Invoice #:** {{invoice.number}}\n**Date:** {{invoice.date}}\n**Due Date:** {{invoice.due_date}}\n\n## Bill To:\n{{client.company}}\n{{client.address}}\n{{client.city}}, {{client.state}} {{client.zip}}\n\n## From:\n{{provider.company}}\n{{provider.address}}\n{{provider.city}}, {{provider.state}} {{provider.zip}}\n\n## Services Provided:\n\n| Description | Quantity | Rate | Amount |\n|-------------|----------|------|---------|\n{{#each line_items}}\n| {{description}} | {{quantity}} | ${{rate}} | ${{amount}} |\n{{/each}}\n\n**Subtotal:** ${{subtotal}}\n**Tax ({{tax_rate}}%):** ${{tax_amount}}\n**Total:** ${{total}}\n\n## Payment Terms:\n{{payment.terms}}\n\n## Payment Methods:\n{{payment.methods}}\n\nThank you for your business!",
+    "templateId": null,
+    "metadata": {
+      "variables": [
+        "invoice.number",
+        "invoice.date",
+        "invoice.due_date",
+        "client.*",
+        "provider.*",
+        "line_items",
+        "subtotal",
+        "tax_rate",
+        "tax_amount",
+        "total",
+        "payment.terms",
+        "payment.methods"
+      ]
+    },
+    "isTemplate": true,
+    "tags": ["invoice", "template", "billing"]
+  },
+  {
+    "id": "doc-003",
+    "userId": "550e8400-e29b-41d4-a716-446655440003",
+    "name": "Project Proposal - Website Redesign",
+    "type": "proposal",
+    "status": "draft",
+    "content": "# Website Redesign Proposal\n\n## Project Overview\nWe propose to redesign your company website to improve user experience, increase conversions, and modernize the visual design.\n\n## Scope of Work\n1. **Discovery & Research**\n   - Stakeholder interviews\n   - User research and personas\n   - Competitive analysis\n\n2. **Design Phase**\n   - Wireframes and user flows\n   - Visual design mockups\n   - Interactive prototypes\n\n3. **Development**\n   - Frontend development\n   - CMS integration\n   - Mobile optimization\n\n4. **Testing & Launch**\n   - Quality assurance testing\n   - Performance optimization\n   - Launch and deployment\n\n## Timeline\n- **Phase 1:** 2 weeks\n- **Phase 2:** 3 weeks\n- **Phase 3:** 4 weeks\n- **Phase 4:** 1 week\n\n**Total Duration:** 10 weeks\n\n## Investment\n- **Total Project Cost:** $15,000\n- **Payment Schedule:** 50% upfront, 50% on completion\n\n## Next Steps\nUpon approval of this proposal, we will:\n1. Send contract for signature\n2. Schedule kickoff meeting\n3. Begin discovery phase\n\nWe're excited to work with you on this project!",
+    "templateId": null,
+    "metadata": {
+      "project_type": "website_redesign",
+      "estimated_hours": 120,
+      "client_industry": "technology"
+    },
+    "isTemplate": false,
+    "tags": ["proposal", "website", "redesign"]
+  }
+]

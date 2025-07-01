@@ -1,0 +1,56 @@
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "email": "demo@kitops.com",
+    "password": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO8G",
+    "firstName": "Demo",
+    "lastName": "User",
+    "company": "KitOps Demo",
+    "role": "user",
+    "isActive": true,
+    "preferences": {
+      "theme": "light",
+      "notifications": {
+        "email": true,
+        "push": true
+      },
+      "timezone": "America/New_York"
+    }
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440002",
+    "email": "admin@kitops.com",
+    "password": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO8G",
+    "firstName": "Admin",
+    "lastName": "User",
+    "company": "KitOps",
+    "role": "admin",
+    "isActive": true,
+    "preferences": {
+      "theme": "dark",
+      "notifications": {
+        "email": true,
+        "push": true
+      },
+      "timezone": "America/Los_Angeles"
+    }
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440003",
+    "email": "freelancer@example.com",
+    "password": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO8G",
+    "firstName": "Sarah",
+    "lastName": "Johnson",
+    "company": "Freelance Design Studio",
+    "role": "user",
+    "isActive": true,
+    "preferences": {
+      "theme": "light",
+      "notifications": {
+        "email": true,
+        "push": false
+      },
+      "timezone": "Europe/London"
+    }
+  }
+]

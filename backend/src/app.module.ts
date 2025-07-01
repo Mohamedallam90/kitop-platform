@@ -10,6 +10,7 @@ import { WorkflowsModule } from './workflows/workflows.module';
 import { ProjectsModule } from './projects/projects.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { PaymentsModule } from './payments/payments.module';
+import { DocumentsModule } from './documents/documents.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { DatabaseModule } from './database/database.module';
@@ -34,6 +35,7 @@ import { DatabaseModule } from './database/database.module';
     ProjectsModule,
     IntegrationsModule,
     PaymentsModule,
+    DocumentsModule,
     NotificationsModule,
     AnalyticsModule,
   ],

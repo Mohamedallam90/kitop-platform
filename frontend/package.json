@@ -29,7 +29,9 @@
     "zustand": "^4.4.7",
     "react-hot-toast": "^2.4.1",
     "date-fns": "^2.30.0",
-    "recharts": "^2.8.0"
+    "recharts": "^2.8.0",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^2.2.0"
   },
   "devDependencies": {
     "eslint": "^8.56.0",

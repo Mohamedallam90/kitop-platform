@@ -1,0 +1,152 @@
+[
+  {
+    "id": "workflow-001",
+    "userId": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "Client Onboarding",
+    "description": "Automated client onboarding process with document collection and setup",
+    "status": "active",
+    "category": "Client Management",
+    "triggers": [
+      {
+        "type": "form_submission",
+        "config": {
+          "form_id": "client_intake_form"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "type": "send_email",
+        "config": {
+          "template": "welcome_email",
+          "to": "{{client.email}}"
+        }
+      },
+      {
+        "type": "create_project",
+        "config": {
+          "name": "{{client.company}} - Onboarding",
+          "status": "active"
+        }
+      },
+      {
+        "type": "generate_contract",
+        "config": {
+          "template": "standard_service_agreement",
+          "client_data": "{{client}}"
+        }
+      }
+    ],
+    "conditions": [
+      {
+        "type": "field_equals",
+        "field": "client.type",
+        "value": "premium"
+      }
+    ],
+    "metadata": {
+      "created_by": "template",
+      "version": "1.0"
+    },
+    "isTemplate": false,
+    "tags": ["onboarding", "automation", "client"]
+  },
+  {
+    "id": "workflow-002",
+    "userId": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "Invoice Processing",
+    "description": "Automated invoice generation and payment tracking",
+    "status": "active",
+    "category": "Finance",
+    "triggers": [
+      {
+        "type": "schedule",
+        "config": {
+          "cron": "0 9 1 * *",
+          "timezone": "America/New_York"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "type": "generate_invoice",
+        "config": {
+          "template": "monthly_invoice",
+          "due_days": 30
+        }
+      },
+      {
+        "type": "send_email",
+        "config": {
+          "template": "invoice_email",
+          "to": "{{client.billing_email}}"
+        }
+      },
+      {
+        "type": "create_payment_reminder",
+        "config": {
+          "days_before_due": 7
+        }
+      }
+    ],
+    "conditions": [],
+    "metadata": {
+      "created_by": "user",
+      "version": "2.1"
+    },
+    "isTemplate": false,
+    "tags": ["finance", "invoicing", "automation"]
+  },
+  {
+    "id": "workflow-003",
+    "userId": "550e8400-e29b-41d4-a716-446655440003",
+    "name": "Document Review",
+    "description": "AI-powered document review and approval workflow",
+    "status": "active",
+    "category": "Legal",
+    "triggers": [
+      {
+        "type": "document_upload",
+        "config": {
+          "folder": "contracts"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "type": "ai_document_analysis",
+        "config": {
+          "provider": "openai",
+          "model": "gpt-4",
+          "analysis_type": "legal_review"
+        }
+      },
+      {
+        "type": "create_review_task",
+        "config": {
+          "assignee": "legal_team",
+          "priority": "high"
+        }
+      },
+      {
+        "type": "send_notification",
+        "config": {
+          "type": "slack",
+          "channel": "#legal-reviews"
+        }
+      }
+    ],
+    "conditions": [
+      {
+        "type": "file_type",
+        "value": ["pdf", "docx"]
+      }
+    ],
+    "metadata": {
+      "created_by": "user",
+      "version": "1.5"
+    },
+    "isTemplate": false,
+    "tags": ["legal", "ai", "document-review"]
+  }
+]
