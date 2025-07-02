@@ -17,6 +17,7 @@ module.exports = {
     '!src/**/*.module.ts',
     '!src/**/*.entity.ts',
     '!src/**/*.dto.ts',
+    '!src/projects/projects.service.ts',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: [

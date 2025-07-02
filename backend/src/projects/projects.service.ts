@@ -15,7 +15,9 @@ export class ProjectsService {
       ...createProjectDto,
       userId,
     });
-    return await this.projectRepository.save(project);
+    // TypeORM save() method type issue workaround
+    const result = await this.projectRepository.save(project);
+    return Array.isArray(result) ? result[0] : result;
   }
 
   async findAll(userId: string): Promise<Project[]> {
