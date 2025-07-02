@@ -1,4 +1,14 @@
-import { Controller, Post, Body, Get, Param, UseGuards, Headers, RawBodyRequest, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  UseGuards,
+  Headers,
+  RawBodyRequest,
+  Req,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
@@ -60,7 +70,7 @@ export class PaymentsController {
   @ApiResponse({ status: 200, description: 'Webhook processed successfully' })
   handleWebhook(
     @Headers('stripe-signature') signature: string,
-    @Req() req: RawBodyRequest<Request>
+    @Req() req: RawBodyRequest<Request>,
   ) {
     return this.paymentsService.handleWebhook(signature, req.rawBody);
   }

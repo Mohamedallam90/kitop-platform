@@ -8,15 +8,14 @@ import {
   Get,
   Param,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiBody,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { OpenAIService, ContractGenerationOptions, ContractDraftResult, AnalysisResult } from './openai.service';
+import {
+  OpenAIService,
+  ContractGenerationOptions,
+  ContractDraftResult,
+  AnalysisResult,
+} from './openai.service';
 import { LawGeexService, LawGeexReviewOptions, LawGeexReviewResult } from './lawgeex.service';
 
 class ContractGenerationDto {
@@ -48,13 +47,14 @@ export class AIController {
 
   @Post('draft-contract')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Generate a contract draft using AI',
-    description: 'Uses OpenAI GPT-4 to generate a comprehensive contract draft based on the provided specifications.'
+    description:
+      'Uses OpenAI GPT-4 to generate a comprehensive contract draft based on the provided specifications.',
   })
-  @ApiBody({ 
+  @ApiBody({
     type: ContractGenerationDto,
-    description: 'Contract generation parameters'
+    description: 'Contract generation parameters',
   })
   @ApiResponse({
     status: 200,
@@ -71,26 +71,29 @@ export class AIController {
             promptTokens: { type: 'number' },
             completionTokens: { type: 'number' },
             totalTokens: { type: 'number' },
-          }
-        }
-      }
-    }
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 400, description: 'Invalid request parameters' })
   @ApiResponse({ status: 500, description: 'AI service error' })
-  async generateContractDraft(@Body() options: ContractGenerationOptions): Promise<ContractDraftResult> {
+  async generateContractDraft(
+    @Body() options: ContractGenerationOptions,
+  ): Promise<ContractDraftResult> {
     return this.openAIService.generateContractDraft(options);
   }
 
   @Post('analyze-contract')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Analyze contract language using AI',
-    description: 'Uses OpenAI GPT-4 to analyze contract language for clarity, risks, and improvement suggestions.'
+    description:
+      'Uses OpenAI GPT-4 to analyze contract language for clarity, risks, and improvement suggestions.',
   })
-  @ApiBody({ 
+  @ApiBody({
     type: ContractAnalysisDto,
-    description: 'Contract text to analyze'
+    description: 'Contract text to analyze',
   })
   @ApiResponse({
     status: 200,
@@ -100,9 +103,9 @@ export class AIController {
         clarity_score: { type: 'number', minimum: 1, maximum: 10 },
         suggestions: { type: 'array', items: { type: 'string' } },
         risk_factors: { type: 'array', items: { type: 'string' } },
-        analysis_summary: { type: 'string' }
-      }
-    }
+        analysis_summary: { type: 'string' },
+      },
+    },
   })
   @ApiResponse({ status: 400, description: 'Invalid contract text' })
   @ApiResponse({ status: 500, description: 'AI service error' })
@@ -112,13 +115,14 @@ export class AIController {
 
   @Post('review-contract')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Review contract with LawGeex AI',
-    description: 'Uses LawGeex AI to perform comprehensive legal review and risk assessment of contract documents.'
+    description:
+      'Uses LawGeex AI to perform comprehensive legal review and risk assessment of contract documents.',
   })
-  @ApiBody({ 
+  @ApiBody({
     type: ContractReviewDto,
-    description: 'Contract document and review options'
+    description: 'Contract document and review options',
   })
   @ApiResponse({
     status: 200,
@@ -133,12 +137,15 @@ export class AIController {
             properties: {
               id: { type: 'string' },
               clause: { type: 'string' },
-              category: { type: 'string', enum: ['high_risk', 'medium_risk', 'low_risk', 'suggestion'] },
+              category: {
+                type: 'string',
+                enum: ['high_risk', 'medium_risk', 'low_risk', 'suggestion'],
+              },
               description: { type: 'string' },
               suggestion: { type: 'string' },
-              severity: { type: 'number', minimum: 1, maximum: 10 }
-            }
-          }
+              severity: { type: 'number', minimum: 1, maximum: 10 },
+            },
+          },
         },
         overall_score: { type: 'number' },
         summary: {
@@ -147,11 +154,11 @@ export class AIController {
             total_issues: { type: 'number' },
             high_risk_count: { type: 'number' },
             medium_risk_count: { type: 'number' },
-            low_risk_count: { type: 'number' }
-          }
-        }
-      }
-    }
+            low_risk_count: { type: 'number' },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 400, description: 'Invalid document content' })
   @ApiResponse({ status: 500, description: 'LawGeex service error' })
@@ -160,9 +167,9 @@ export class AIController {
   }
 
   @Get('review-status/:documentId')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Check contract review status',
-    description: 'Check the status of an ongoing LawGeex contract review.'
+    description: 'Check the status of an ongoing LawGeex contract review.',
   })
   @ApiResponse({
     status: 200,
@@ -171,9 +178,9 @@ export class AIController {
       properties: {
         status: { type: 'string', enum: ['completed', 'processing', 'failed'] },
         progress: { type: 'number', minimum: 0, maximum: 100 },
-        estimated_completion: { type: 'string', format: 'date-time', nullable: true }
-      }
-    }
+        estimated_completion: { type: 'string', format: 'date-time', nullable: true },
+      },
+    },
   })
   @ApiResponse({ status: 404, description: 'Document not found' })
   async getReviewStatus(@Param('documentId') documentId: string) {
@@ -181,17 +188,17 @@ export class AIController {
   }
 
   @Get('document-types')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get supported document types',
-    description: 'Retrieve the list of document types supported by LawGeex for review.'
+    description: 'Retrieve the list of document types supported by LawGeex for review.',
   })
   @ApiResponse({
     status: 200,
     description: 'Supported document types retrieved successfully',
     schema: {
       type: 'array',
-      items: { type: 'string' }
-    }
+      items: { type: 'string' },
+    },
   })
   async getSupportedDocumentTypes(): Promise<string[]> {
     return this.lawGeexService.getSupportedDocumentTypes();
@@ -199,9 +206,9 @@ export class AIController {
 
   @Post('filter-issues')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Filter review issues by severity',
-    description: 'Filter LawGeex review issues based on minimum severity level.'
+    description: 'Filter LawGeex review issues based on minimum severity level.',
   })
   @ApiBody({
     schema: {
@@ -211,17 +218,17 @@ export class AIController {
           items: {
             properties: {
               id: { type: 'string' },
-              severity: { type: 'number', minimum: 1, maximum: 10 }
-            }
-          }
+              severity: { type: 'number', minimum: 1, maximum: 10 },
+            },
+          },
         },
-        minSeverity: { type: 'number', minimum: 1, maximum: 10, default: 5 }
-      }
-    }
+        minSeverity: { type: 'number', minimum: 1, maximum: 10, default: 5 },
+      },
+    },
   })
   @ApiResponse({
     status: 200,
-    description: 'Issues filtered successfully'
+    description: 'Issues filtered successfully',
   })
   async filterIssues(@Body() body: { issues: any[]; minSeverity?: number }) {
     return this.lawGeexService.filterIssuesBySeverity(body.issues, body.minSeverity);
@@ -229,9 +236,9 @@ export class AIController {
 
   @Post('analyze-issues')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Analyze review issues',
-    description: 'Get detailed analysis and statistics of LawGeex review issues.'
+    description: 'Get detailed analysis and statistics of LawGeex review issues.',
   })
   @ApiBody({
     schema: {
@@ -241,12 +248,12 @@ export class AIController {
           items: {
             properties: {
               category: { type: 'string' },
-              severity: { type: 'number', minimum: 1, maximum: 10 }
-            }
-          }
-        }
-      }
-    }
+              severity: { type: 'number', minimum: 1, maximum: 10 },
+            },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 200,
@@ -257,17 +264,17 @@ export class AIController {
         by_category: { type: 'object' },
         by_severity: { type: 'object' },
         average_severity: { type: 'number' },
-        risk_score: { type: 'number', minimum: 0, maximum: 100 }
-      }
-    }
+        risk_score: { type: 'number', minimum: 0, maximum: 100 },
+      },
+    },
   })
   async analyzeIssues(@Body() body: { issues: any[] }) {
     const summary = this.lawGeexService.getIssuesSummary(body.issues);
     const riskScore = this.lawGeexService.calculateRiskScore(body.issues);
-    
+
     return {
       ...summary,
-      risk_score: riskScore
+      risk_score: riskScore,
     };
   }
 }

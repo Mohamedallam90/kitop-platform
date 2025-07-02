@@ -13,10 +13,10 @@ export class CreateWorkflowDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ 
+  @ApiPropertyOptional({
     description: 'Workflow status',
     enum: WorkflowStatus,
-    default: WorkflowStatus.DRAFT
+    default: WorkflowStatus.DRAFT,
   })
   @IsOptional()
   @IsEnum(WorkflowStatus)
@@ -25,7 +25,7 @@ export class CreateWorkflowDto {
   @ApiPropertyOptional({
     description: 'Trigger type for the workflow',
     enum: WorkflowTriggerType,
-    default: WorkflowTriggerType.MANUAL
+    default: WorkflowTriggerType.MANUAL,
   })
   @IsOptional()
   @IsEnum(WorkflowTriggerType)

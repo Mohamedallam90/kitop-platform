@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 export enum WorkflowStatus {
@@ -6,14 +14,14 @@ export enum WorkflowStatus {
   ACTIVE = 'active',
   PAUSED = 'paused',
   COMPLETED = 'completed',
-  FAILED = 'failed'
+  FAILED = 'failed',
 }
 
 export enum WorkflowTriggerType {
   MANUAL = 'manual',
   SCHEDULE = 'schedule',
   WEBHOOK = 'webhook',
-  EVENT = 'event'
+  EVENT = 'event',
 }
 
 @Entity('workflows')
@@ -30,14 +38,14 @@ export class Workflow {
   @Column({
     type: 'enum',
     enum: WorkflowStatus,
-    default: WorkflowStatus.DRAFT
+    default: WorkflowStatus.DRAFT,
   })
   status: WorkflowStatus;
 
   @Column({
     type: 'enum',
     enum: WorkflowTriggerType,
-    default: WorkflowTriggerType.MANUAL
+    default: WorkflowTriggerType.MANUAL,
   })
   triggerType: WorkflowTriggerType;
 

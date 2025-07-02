@@ -21,9 +21,19 @@ export class WorkflowsService {
     return await this.workflowRepository.save(workflow);
   }
 
-  async findAll(userId: string): Promise<Workflow[]> {
+  async findAll(userId: string, filters?: { status?: string; category?: string }): Promise<Workflow[]> {
+    const where: any = { userId };
+    
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+    
+    if (filters?.category) {
+      where.category = filters.category;
+    }
+
     return await this.workflowRepository.find({
-      where: { userId },
+      where,
       order: { createdAt: 'DESC' },
     });
   }
@@ -40,9 +50,13 @@ export class WorkflowsService {
     return workflow;
   }
 
-  async update(id: string, updateWorkflowDto: UpdateWorkflowDto, userId: string): Promise<Workflow> {
+  async update(
+    id: string,
+    updateWorkflowDto: UpdateWorkflowDto,
+    userId: string,
+  ): Promise<Workflow> {
     const workflow = await this.findOne(id, userId);
-    
+
     Object.assign(workflow, updateWorkflowDto);
     return await this.workflowRepository.save(workflow);
   }
@@ -52,7 +66,7 @@ export class WorkflowsService {
     await this.workflowRepository.remove(workflow);
   }
 
-  async execute(id: string, userId: string): Promise<{ success: boolean; message: string }> {
+  async execute(id: string, executeWorkflowDto: any, userId: string): Promise<{ success: boolean; message: string }> {
     const workflow = await this.findOne(id, userId);
 
     if (workflow.status !== WorkflowStatus.ACTIVE) {
@@ -67,15 +81,15 @@ export class WorkflowsService {
 
       // TODO: Implement actual workflow execution logic
       // This would involve processing workflow.steps and executing each step
-      
+
       return {
         success: true,
-        message: 'Workflow executed successfully'
+        message: 'Workflow executed successfully',
       };
     } catch (error) {
       return {
         success: false,
-        message: `Workflow execution failed: ${error.message}`
+        message: `Workflow execution failed: ${error.message}`,
       };
     }
   }
@@ -94,13 +108,20 @@ export class WorkflowsService {
 
   async getExecutionHistory(id: string, userId: string): Promise<any[]> {
     const workflow = await this.findOne(id, userId);
-    
+
     // TODO: Implement execution history retrieval from separate execution log table
     // For now, return basic execution info
-    return [{
-      executionCount: workflow.executionCount,
-      lastExecutedAt: workflow.lastExecutedAt,
-      status: workflow.status
-    }];
+    return [
+      {
+        executionCount: workflow.executionCount,
+        lastExecutedAt: workflow.lastExecutedAt,
+        status: workflow.status,
+      },
+    ];
+  }
+
+  async getExecutions(id: string, userId: string): Promise<any[]> {
+    // Alias for getExecutionHistory to match controller expectations
+    return this.getExecutionHistory(id, userId);
   }
 }

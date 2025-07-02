@@ -12,13 +12,7 @@ import {
   HttpStatus,
   Query,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WorkflowsService } from './workflows.service';
 import { CreateWorkflowDto } from './dto/create-workflow.dto';
@@ -54,7 +48,7 @@ export class WorkflowsController {
   async findAll(
     @Request() req,
     @Query('status') status?: string,
-    @Query('category') category?: string
+    @Query('category') category?: string,
   ): Promise<Workflow[]> {
     return this.workflowsService.findAll(req.user.id, { status, category });
   }
@@ -117,7 +111,7 @@ export class WorkflowsController {
   async execute(
     @Param('id') id: string,
     @Body() executeWorkflowDto: ExecuteWorkflowDto,
-    @Request() req
+    @Request() req,
   ): Promise<{ success: boolean; message: string }> {
     return this.workflowsService.execute(id, executeWorkflowDto, req.user.id);
   }

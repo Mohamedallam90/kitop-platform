@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AnalyticsService {
-  async getUserMetrics(userId: string) {
+  async getUserMetrics(_userId: string) {
     // TODO: Implement user analytics
     return {
       totalWorkflows: 0,
@@ -22,7 +22,7 @@ export class AnalyticsService {
     };
   }
 
-  async getUsageMetrics(userId: string, period: 'day' | 'week' | 'month' = 'week') {
+  async getUsageMetrics(_userId: string, period: 'day' | 'week' | 'month' = 'week') {
     // TODO: Implement usage analytics
     return {
       period,

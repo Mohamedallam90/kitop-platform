@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+  Request,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { DocumentsService } from './documents.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
@@ -47,10 +58,7 @@ export class DocumentsController {
   @Post('generate')
   @ApiOperation({ summary: 'Generate document with AI' })
   @ApiResponse({ status: 201, description: 'Document generated successfully' })
-  generateDocument(
-    @Request() req,
-    @Body() body: { type: string; data: any }
-  ) {
+  generateDocument(@Request() req, @Body() body: { type: string; data: any }) {
     return this.documentsService.generateDocument(req.user.id, body.type, body.data);
   }
 
@@ -60,7 +68,7 @@ export class DocumentsController {
   createFromTemplate(
     @Request() req,
     @Param('templateId') templateId: string,
-    @Body() body: { name: string }
+    @Body() body: { name: string },
   ) {
     return this.documentsService.createFromTemplate(templateId, req.user.id, body.name);
   }

@@ -7,7 +7,7 @@ import { Workflow, WorkflowStatus } from './entities/workflow.entity';
 
 describe('WorkflowsService', () => {
   let service: WorkflowsService;
-  let repository: Repository<Workflow>;
+  let _repository: Repository<Workflow>;
 
   const mockRepository = {
     create: jest.fn(),
@@ -39,7 +39,7 @@ describe('WorkflowsService', () => {
     }).compile();
 
     service = module.get<WorkflowsService>(WorkflowsService);
-    repository = module.get<Repository<Workflow>>(getRepositoryToken(Workflow));
+    _repository = module.get<Repository<Workflow>>(getRepositoryToken(Workflow));
   });
 
   afterEach(() => {
@@ -101,9 +101,7 @@ describe('WorkflowsService', () => {
     it('should throw NotFoundException when workflow not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.findOne('non-existent', 'user-123')).rejects.toThrow(
-        NotFoundException
-      );
+      await expect(service.findOne('non-existent', 'user-123')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -130,9 +128,9 @@ describe('WorkflowsService', () => {
     it('should throw NotFoundException when workflow not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.update('non-existent', updateWorkflowDto, 'user-123')
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.update('non-existent', updateWorkflowDto, 'user-123')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -149,9 +147,7 @@ describe('WorkflowsService', () => {
     it('should throw NotFoundException when workflow not found', async () => {
       mockRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.remove('non-existent', 'user-123')).rejects.toThrow(
-        NotFoundException
-      );
+      await expect(service.remove('non-existent', 'user-123')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -165,7 +161,7 @@ describe('WorkflowsService', () => {
         lastExecutedAt: expect.any(Date),
       });
 
-      const result = await service.execute('workflow-123', 'user-123');
+      const result = await service.execute('workflow-123', {}, 'user-123');
 
       expect(result.success).toBe(true);
       expect(result.message).toBe('Workflow executed successfully');
@@ -175,9 +171,7 @@ describe('WorkflowsService', () => {
     it('should throw ForbiddenException for non-active workflows', async () => {
       mockRepository.findOne.mockResolvedValue(mockWorkflow); // DRAFT status
 
-      await expect(service.execute('workflow-123', 'user-123')).rejects.toThrow(
-        ForbiddenException
-      );
+      await expect(service.execute('workflow-123', {}, 'user-123')).rejects.toThrow(ForbiddenException);
     });
 
     it('should handle execution errors', async () => {
@@ -185,7 +179,7 @@ describe('WorkflowsService', () => {
       mockRepository.findOne.mockResolvedValue(activeWorkflow);
       mockRepository.save.mockRejectedValue(new Error('Database error'));
 
-      const result = await service.execute('workflow-123', 'user-123');
+      const result = await service.execute('workflow-123', {}, 'user-123');
 
       expect(result.success).toBe(false);
       expect(result.message).toContain('Workflow execution failed');

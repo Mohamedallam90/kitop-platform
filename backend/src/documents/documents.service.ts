@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Document } from './entities/document.entity';
@@ -36,9 +36,13 @@ export class DocumentsService {
     return document;
   }
 
-  async update(id: string, userId: string, updateDocumentDto: UpdateDocumentDto): Promise<Document> {
+  async update(
+    id: string,
+    userId: string,
+    updateDocumentDto: UpdateDocumentDto,
+  ): Promise<Document> {
     const document = await this.findOne(id, userId);
-    
+
     Object.assign(document, updateDocumentDto);
     return this.documentRepository.save(document);
   }
@@ -87,7 +91,7 @@ export class DocumentsService {
   async generateDocument(userId: string, type: string, data: any): Promise<Document> {
     // AI-powered document generation logic would go here
     // For now, we'll create a basic document
-    
+
     const templates = {
       contract: 'This is a contract template with placeholder data.',
       invoice: 'Invoice template with billing information.',
@@ -114,7 +118,7 @@ export class DocumentsService {
       .where('document.userId = :userId', { userId })
       .andWhere(
         '(document.name ILIKE :query OR document.content ILIKE :query OR document.tags::text ILIKE :query)',
-        { query: `%${query}%` }
+        { query: `%${query}%` },
       )
       .orderBy('document.updatedAt', 'DESC')
       .getMany();

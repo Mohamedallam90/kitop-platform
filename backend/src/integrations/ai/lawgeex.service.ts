@@ -48,16 +48,18 @@ export class LawGeexService {
     this.apiUrl = this.configService.get<string>('LAWGEEX_API_URL') || 'https://api.lawgeex.com';
 
     if (!apiKey) {
-      throw new Error('LawGeex API key is not configured. Please set LAWGEEX_API_KEY environment variable.');
+      throw new Error(
+        'LawGeex API key is not configured. Please set LAWGEEX_API_KEY environment variable.',
+      );
     }
 
     this.axiosInstance = axios.create({
       baseURL: this.apiUrl,
       timeout: 60000,
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
     });
 
@@ -67,13 +69,13 @@ export class LawGeexService {
       (error) => {
         this.logger.error(`LawGeex API error: ${error.message}`, error);
         return Promise.reject(error);
-      }
+      },
     );
   }
 
   async reviewContractWithLawGeex(
     documentContent: string,
-    options: LawGeexReviewOptions = {}
+    options: LawGeexReviewOptions = {},
   ): Promise<LawGeexReviewResult> {
     this.logger.log('Initiating contract review with LawGeex');
 
@@ -102,12 +104,14 @@ export class LawGeexService {
       if (axios.isAxiosError(error)) {
         const status = error.response?.status;
         const message = error.response?.data?.message || error.message;
-        
+
         switch (status) {
           case 401:
             throw new Error('Invalid LawGeex API key. Please check your credentials.');
           case 403:
-            throw new Error('Access denied. Please verify your LawGeex subscription and permissions.');
+            throw new Error(
+              'Access denied. Please verify your LawGeex subscription and permissions.',
+            );
           case 429:
             throw new Error('Rate limit exceeded. Please try again later.');
           case 500:
@@ -116,9 +120,11 @@ export class LawGeexService {
             throw new Error(`LawGeex API error (${status}): ${message}`);
         }
       }
-      
+
       this.logger.error('Error reviewing contract with LawGeex:', error);
-      throw new Error(`Contract review failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Contract review failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -136,7 +142,9 @@ export class LawGeexService {
       return response.data;
     } catch (error) {
       this.logger.error('Error checking review status:', error);
-      throw new Error(`Status check failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Status check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     }
   }
 
@@ -162,37 +170,40 @@ export class LawGeexService {
     if (!Array.isArray(issues)) {
       throw new Error('Issues must be an array');
     }
-    
+
     if (typeof minSeverity !== 'number' || minSeverity < 1 || minSeverity > 10) {
       throw new Error('Minimum severity must be a number between 1 and 10');
     }
-    
-    return issues.filter(issue => issue.severity >= minSeverity);
+
+    return issues.filter((issue) => issue.severity >= minSeverity);
   }
 
   groupIssuesByCategory(issues: LawGeexIssue[]): Record<string, LawGeexIssue[]> {
     if (!Array.isArray(issues)) {
       throw new Error('Issues must be an array');
     }
-    
-    return issues.reduce((groups, issue) => {
-      const category = issue.category;
-      if (!groups[category]) {
-        groups[category] = [];
-      }
-      groups[category].push(issue);
-      return groups;
-    }, {} as Record<string, LawGeexIssue[]>);
+
+    return issues.reduce(
+      (groups, issue) => {
+        const category = issue.category;
+        if (!groups[category]) {
+          groups[category] = [];
+        }
+        groups[category].push(issue);
+        return groups;
+      },
+      {} as Record<string, LawGeexIssue[]>,
+    );
   }
 
   calculateRiskScore(issues: LawGeexIssue[]): number {
     if (!Array.isArray(issues) || issues.length === 0) {
       return 0;
     }
-    
+
     const totalSeverity = issues.reduce((sum, issue) => sum + issue.severity, 0);
     const averageSeverity = totalSeverity / issues.length;
-    
+
     // Convert to 0-100 scale
     return Math.round((averageSeverity / 10) * 100);
   }
@@ -206,7 +217,7 @@ export class LawGeexService {
     if (!Array.isArray(issues)) {
       throw new Error('Issues must be an array');
     }
-    
+
     const by_category: Record<string, number> = {};
     const by_severity: Record<string, number> = {
       'low (1-3)': 0,
@@ -214,13 +225,13 @@ export class LawGeexService {
       'high (7-8)': 0,
       'critical (9-10)': 0,
     };
-    
+
     let totalSeverity = 0;
-    
-    issues.forEach(issue => {
+
+    issues.forEach((issue) => {
       // Count by category
       by_category[issue.category] = (by_category[issue.category] || 0) + 1;
-      
+
       // Count by severity range
       if (issue.severity <= 3) {
         by_severity['low (1-3)']++;
@@ -231,10 +242,10 @@ export class LawGeexService {
       } else {
         by_severity['critical (9-10)']++;
       }
-      
+
       totalSeverity += issue.severity;
     });
-    
+
     return {
       total: issues.length,
       by_category,

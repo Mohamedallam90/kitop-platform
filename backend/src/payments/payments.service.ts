@@ -99,7 +99,7 @@ export class PaymentsService {
       // Update database
       await this.subscriptionRepository.update(
         { stripeSubscriptionId: subscriptionId },
-        { cancelAtPeriodEnd: true }
+        { cancelAtPeriodEnd: true },
       );
 
       return subscription;
@@ -170,7 +170,7 @@ export class PaymentsService {
   private async handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
     await this.paymentRepository.update(
       { stripePaymentIntentId: paymentIntent.id },
-      { status: 'succeeded' }
+      { status: 'succeeded' },
     );
   }
 
@@ -178,7 +178,7 @@ export class PaymentsService {
     if (invoice.subscription) {
       await this.subscriptionRepository.update(
         { stripeSubscriptionId: invoice.subscription as string },
-        { status: 'active' }
+        { status: 'active' },
       );
     }
   }
@@ -190,7 +190,7 @@ export class PaymentsService {
         status: subscription.status,
         currentPeriodStart: new Date(subscription.current_period_start * 1000),
         currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      }
+      },
     );
   }
 
@@ -200,7 +200,7 @@ export class PaymentsService {
       {
         status: 'canceled',
         canceledAt: new Date(),
-      }
+      },
     );
   }
 

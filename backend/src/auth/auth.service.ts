@@ -116,7 +116,7 @@ export class AuthService {
   }
 
   private sanitizeUser(user: User) {
-    const { password, ...sanitizedUser } = user;
+    const { password: _password, ...sanitizedUser } = user;
     return sanitizedUser;
   }
 
@@ -128,13 +128,13 @@ export class AuthService {
     }
 
     // Generate reset token (implement token storage and email sending)
-    const resetToken = this.jwtService.sign(
+    const _resetToken = this.jwtService.sign(
       { sub: user.id, type: 'password-reset' },
-      { expiresIn: '1h' }
+      { expiresIn: '1h' },
     );
 
     // TODO: Send email with reset link
-    // await this.emailService.sendPasswordResetEmail(user.email, resetToken);
+    // await this.emailService.sendPasswordResetEmail(user.email, _resetToken);
 
     return { message: 'If the email exists, a reset link has been sent' };
   }

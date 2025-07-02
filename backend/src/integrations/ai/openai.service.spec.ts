@@ -4,7 +4,7 @@ import { OpenAIService } from './openai.service';
 
 describe('OpenAIService', () => {
   let service: OpenAIService;
-  let configService: ConfigService;
+  let _configService: ConfigService;
 
   const mockConfigService = {
     get: jest.fn((key: string) => {
@@ -29,7 +29,7 @@ describe('OpenAIService', () => {
     }).compile();
 
     service = module.get<OpenAIService>(OpenAIService);
-    configService = module.get<ConfigService>(ConfigService);
+    _configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {
@@ -51,7 +51,7 @@ describe('OpenAIService', () => {
               useValue: mockConfigServiceNoKey,
             },
           ],
-        }).compile()
+        }).compile(),
       ).rejects.toThrow('OpenAI API key is not configured');
     });
   });
@@ -66,28 +66,31 @@ describe('OpenAIService', () => {
     };
 
     beforeEach(() => {
-      // Mock the OpenAI client
-      jest.spyOn(service as any, 'openai').mockImplementation(() => ({
+      // Mock the OpenAI client methods
+      const mockCreate = jest.fn().mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: 'Generated contract content here...',
+            },
+          },
+        ],
+        model: 'gpt-4',
+        usage: {
+          prompt_tokens: 100,
+          completion_tokens: 200,
+          total_tokens: 300,
+        },
+      });
+
+      // Access the private openai property and mock its methods
+      (service as any).openai = {
         chat: {
           completions: {
-            create: jest.fn().mockResolvedValue({
-              choices: [
-                {
-                  message: {
-                    content: 'Generated contract content here...',
-                  },
-                },
-              ],
-              model: 'gpt-4',
-              usage: {
-                prompt_tokens: 100,
-                completion_tokens: 200,
-                total_tokens: 300,
-              },
-            }),
+            create: mockCreate,
           },
         },
-      }));
+      };
     });
 
     it('should generate contract draft successfully', async () => {
@@ -104,33 +107,37 @@ describe('OpenAIService', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      jest.spyOn(service as any, 'openai').mockImplementation(() => ({
+      const mockCreate = jest.fn().mockRejectedValue(new Error('API Error'));
+      
+      (service as any).openai = {
         chat: {
           completions: {
-            create: jest.fn().mockRejectedValue(new Error('API Error')),
+            create: mockCreate,
           },
         },
-      }));
+      };
 
       await expect(service.generateContractDraft(mockOptions)).rejects.toThrow(
-        'Contract generation failed: API Error'
+        'Contract generation failed: API Error',
       );
     });
 
     it('should handle empty response', async () => {
-      jest.spyOn(service as any, 'openai').mockImplementation(() => ({
+      const mockCreate = jest.fn().mockResolvedValue({
+        choices: [],
+        model: 'gpt-4',
+      });
+      
+      (service as any).openai = {
         chat: {
           completions: {
-            create: jest.fn().mockResolvedValue({
-              choices: [],
-              model: 'gpt-4',
-            }),
+            create: mockCreate,
           },
         },
-      }));
+      };
 
       await expect(service.generateContractDraft(mockOptions)).rejects.toThrow(
-        'No content generated from OpenAI API'
+        'No content generated from OpenAI API',
       );
     });
   });
@@ -139,27 +146,30 @@ describe('OpenAIService', () => {
     const mockContractText = 'This is a sample contract for testing purposes.';
 
     beforeEach(() => {
-      jest.spyOn(service as any, 'openai').mockImplementation(() => ({
+      const mockCreate = jest.fn().mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content:
+                'Clarity Score: 8.5\nSuggestions:\n- Improve clause clarity\n- Add more specific terms\nRisk Factors:\n- Potential ambiguity in section 3\n- Missing termination clause',
+            },
+          },
+        ],
+        model: 'gpt-4',
+        usage: {
+          prompt_tokens: 50,
+          completion_tokens: 100,
+          total_tokens: 150,
+        },
+      });
+
+      (service as any).openai = {
         chat: {
           completions: {
-            create: jest.fn().mockResolvedValue({
-              choices: [
-                {
-                  message: {
-                    content: 'Clarity Score: 8.5\nSuggestions:\n- Improve clause clarity\n- Add more specific terms\nRisk Factors:\n- Potential ambiguity in section 3\n- Missing termination clause',
-                  },
-                },
-              ],
-              model: 'gpt-4',
-              usage: {
-                prompt_tokens: 50,
-                completion_tokens: 100,
-                total_tokens: 150,
-              },
-            }),
+            create: mockCreate,
           },
         },
-      }));
+      };
     });
 
     it('should analyze contract language successfully', async () => {
@@ -176,37 +186,41 @@ describe('OpenAIService', () => {
 
     it('should throw error for empty contract text', async () => {
       await expect(service.analyzeContractLanguage('')).rejects.toThrow(
-        'Contract text is required for analysis'
+        'Contract text is required for analysis',
       );
     });
 
     it('should throw error for null/undefined contract text', async () => {
       await expect(service.analyzeContractLanguage(null as any)).rejects.toThrow(
-        'Contract text is required for analysis'
+        'Contract text is required for analysis',
       );
     });
 
     it('should provide default suggestions when parsing fails', async () => {
-      jest.spyOn(service as any, 'openai').mockImplementation(() => ({
+      const mockCreate = jest.fn().mockResolvedValue({
+        choices: [
+          {
+            message: {
+              content: 'Random response without proper structure',
+            },
+          },
+        ],
+        model: 'gpt-4',
+      });
+
+      (service as any).openai = {
         chat: {
           completions: {
-            create: jest.fn().mockResolvedValue({
-              choices: [
-                {
-                  message: {
-                    content: 'Random response without proper structure',
-                  },
-                },
-              ],
-              model: 'gpt-4',
-            }),
+            create: mockCreate,
           },
         },
-      }));
+      };
 
       const result = await service.analyzeContractLanguage(mockContractText);
 
-      expect(result.suggestions).toContain('Consider reviewing contract language for clarity and completeness');
+      expect(result.suggestions).toContain(
+        'Consider reviewing contract language for clarity and completeness',
+      );
       expect(result.risk_factors).toContain('No significant risks identified in initial analysis');
     });
   });
@@ -239,7 +253,9 @@ describe('OpenAIService', () => {
       const result = (service as any).parseAnalysisResponse(malformedResponse);
 
       expect(result.clarity_score).toBe(7.5); // Default score
-      expect(result.suggestions).toContain('Consider reviewing contract language for clarity and completeness');
+      expect(result.suggestions).toContain(
+        'Consider reviewing contract language for clarity and completeness',
+      );
       expect(result.risk_factors).toContain('No significant risks identified in initial analysis');
     });
   });

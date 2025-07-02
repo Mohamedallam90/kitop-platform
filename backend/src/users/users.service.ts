@@ -20,7 +20,22 @@ export class UsersService {
   async findOne(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
-      select: ['id', 'email', 'firstName', 'lastName', 'company', 'role', 'isActive', 'avatar', 'phone', 'timezone', 'preferences', 'lastLoginAt', 'createdAt', 'updatedAt'],
+      select: [
+        'id',
+        'email',
+        'firstName',
+        'lastName',
+        'company',
+        'role',
+        'isActive',
+        'avatar',
+        'phone',
+        'timezone',
+        'preferences',
+        'lastLoginAt',
+        'createdAt',
+        'updatedAt',
+      ],
     });
 
     if (!user) {
@@ -32,7 +47,7 @@ export class UsersService {
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
-    
+
     Object.assign(user, updateUserDto);
     await this.userRepository.save(user);
 

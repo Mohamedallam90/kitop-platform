@@ -6,16 +6,16 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 export class HealthController {
   @Get()
   @ApiOperation({ summary: 'Health check endpoint' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Application is healthy',
     schema: {
       properties: {
         status: { type: 'string', example: 'ok' },
         timestamp: { type: 'string', format: 'date-time' },
         uptime: { type: 'number' },
-      }
-    }
+      },
+    },
   })
   check() {
     return {
