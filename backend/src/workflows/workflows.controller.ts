@@ -10,6 +10,7 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,6 +23,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WorkflowsService } from './workflows.service';
 import { CreateWorkflowDto } from './dto/create-workflow.dto';
 import { UpdateWorkflowDto } from './dto/update-workflow.dto';
+import { ExecuteWorkflowDto } from './dto/execute-workflow.dto';
 import { Workflow } from './entities/workflow.entity';
 
 @ApiTags('workflows')
@@ -49,8 +51,12 @@ export class WorkflowsController {
     description: 'Workflows retrieved successfully',
     type: [Workflow],
   })
-  async findAll(@Request() req): Promise<Workflow[]> {
-    return this.workflowsService.findAll(req.user.id);
+  async findAll(
+    @Request() req,
+    @Query('status') status?: string,
+    @Query('category') category?: string
+  ): Promise<Workflow[]> {
+    return this.workflowsService.findAll(req.user.id, { status, category });
   }
 
   @Get(':id')
@@ -108,8 +114,33 @@ export class WorkflowsController {
   })
   @ApiResponse({ status: 404, description: 'Workflow not found' })
   @ApiResponse({ status: 403, description: 'Workflow cannot be executed' })
-  async execute(@Param('id') id: string, @Request() req): Promise<{ success: boolean; message: string }> {
-    return this.workflowsService.execute(id, req.user.id);
+  async execute(
+    @Param('id') id: string,
+    @Body() executeWorkflowDto: ExecuteWorkflowDto,
+    @Request() req
+  ): Promise<{ success: boolean; message: string }> {
+    return this.workflowsService.execute(id, executeWorkflowDto, req.user.id);
+  }
+
+  @Get(':id/executions')
+  @ApiOperation({ summary: 'Get workflow execution history' })
+  @ApiParam({ name: 'id', description: 'Workflow ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Execution history retrieved successfully',
+    schema: {
+      type: 'array',
+      items: {
+        properties: {
+          executionCount: { type: 'number' },
+          lastExecutedAt: { type: 'string', format: 'date-time' },
+          status: { type: 'string' },
+        },
+      },
+    },
+  })
+  async getExecutions(@Param('id') id: string, @Request() req): Promise<any[]> {
+    return this.workflowsService.getExecutions(id, req.user.id);
   }
 
   @Post(':id/pause')
@@ -137,7 +168,7 @@ export class WorkflowsController {
   }
 
   @Get(':id/history')
-  @ApiOperation({ summary: 'Get workflow execution history' })
+  @ApiOperation({ summary: 'Get workflow execution history (legacy endpoint)' })
   @ApiParam({ name: 'id', description: 'Workflow ID' })
   @ApiResponse({
     status: 200,
