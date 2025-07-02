@@ -108,7 +108,7 @@ describe('OpenAIService', () => {
 
     it('should handle API errors gracefully', async () => {
       const mockCreate = jest.fn().mockRejectedValue(new Error('API Error'));
-      
+
       (service as any).openai = {
         chat: {
           completions: {
@@ -127,7 +127,7 @@ describe('OpenAIService', () => {
         choices: [],
         model: 'gpt-4',
       });
-      
+
       (service as any).openai = {
         chat: {
           completions: {

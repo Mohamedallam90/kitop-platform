@@ -171,7 +171,9 @@ describe('WorkflowsService', () => {
     it('should throw ForbiddenException for non-active workflows', async () => {
       mockRepository.findOne.mockResolvedValue(mockWorkflow); // DRAFT status
 
-      await expect(service.execute('workflow-123', {}, 'user-123')).rejects.toThrow(ForbiddenException);
+      await expect(service.execute('workflow-123', {}, 'user-123')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should handle execution errors', async () => {

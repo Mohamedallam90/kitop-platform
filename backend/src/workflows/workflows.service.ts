@@ -21,13 +21,16 @@ export class WorkflowsService {
     return await this.workflowRepository.save(workflow);
   }
 
-  async findAll(userId: string, filters?: { status?: string; category?: string }): Promise<Workflow[]> {
+  async findAll(
+    userId: string,
+    filters?: { status?: string; category?: string },
+  ): Promise<Workflow[]> {
     const where: any = { userId };
-    
+
     if (filters?.status) {
       where.status = filters.status;
     }
-    
+
     if (filters?.category) {
       where.category = filters.category;
     }
@@ -66,7 +69,11 @@ export class WorkflowsService {
     await this.workflowRepository.remove(workflow);
   }
 
-  async execute(id: string, executeWorkflowDto: any, userId: string): Promise<{ success: boolean; message: string }> {
+  async execute(
+    id: string,
+    executeWorkflowDto: any,
+    userId: string,
+  ): Promise<{ success: boolean; message: string }> {
     const workflow = await this.findOne(id, userId);
 
     if (workflow.status !== WorkflowStatus.ACTIVE) {
