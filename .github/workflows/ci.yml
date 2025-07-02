@@ -1,0 +1,538 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Install dependencies and cache them
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd frontend && npm ci
+          cd ../backend && npm ci
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+  # Lint and format check
+  lint:
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Run ESLint
+        run: |
+          npm run lint:frontend
+          npm run lint:backend
+
+      - name: Check TypeScript compilation
+        run: |
+          cd frontend && npx tsc --noEmit
+          cd ../backend && npx tsc --noEmit
+
+  # Unit and integration tests
+  test:
+    runs-on: ubuntu-latest
+    needs: install
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kitops_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:6
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: kitops_test
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      JWT_SECRET: test-jwt-secret
+      OPENAI_API_KEY: test-openai-key
+      LAWGEEX_API_KEY: test-lawgeex-key
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Run database migrations
+        run: |
+          cd backend
+          npm run migration:run
+
+      - name: Run backend unit tests
+        run: |
+          cd backend
+          npm run test:cov
+
+      - name: Run frontend unit tests
+        run: |
+          cd frontend
+          npm run test -- --coverage --watchAll=false
+
+      - name: Check test coverage thresholds
+        run: |
+          cd backend
+          npx jest --coverage --coverageThreshold='{"global":{"branches":80,"functions":80,"lines":80,"statements":80}}'
+
+      - name: Upload backend coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./backend/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+
+      - name: Upload frontend coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+
+  # End-to-end tests
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [install, test]
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kitops_e2e
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:6
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: kitops_e2e
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      JWT_SECRET: test-jwt-secret
+      OPENAI_API_KEY: test-openai-key
+      LAWGEEX_API_KEY: test-lawgeex-key
+      FRONTEND_URL: http://localhost:3000
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Setup test database
+        run: |
+          cd backend
+          npm run migration:run
+          npm run seed-demo
+
+      - name: Start backend server
+        run: |
+          cd backend
+          npm run start &
+          sleep 30
+
+      - name: Start frontend server
+        run: |
+          cd frontend
+          npm run build
+          npm start &
+          sleep 30
+
+      - name: Install Cypress
+        run: |
+          cd frontend
+          npx cypress install
+
+      - name: Run E2E tests
+        run: |
+          cd frontend
+          npx cypress run --spec "cypress/e2e/ai-workflow.cy.ts"
+
+      - name: Upload E2E test videos
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: cypress-videos
+          path: frontend/cypress/videos
+
+  # Security scanning
+  security:
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Run npm audit
+        run: |
+          npm audit --audit-level=moderate
+          cd frontend && npm audit --audit-level=moderate
+          cd ../backend && npm audit --audit-level=moderate
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          languages: typescript, javascript
+
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+  # Build and Docker image creation
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, test, security]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Build applications
+        run: |
+          npm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push backend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Extract metadata for frontend
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push frontend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Security scan Docker images
+  image-security:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner on backend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:latest
+          format: 'sarif'
+          output: 'backend-trivy-results.sarif'
+
+      - name: Run Trivy vulnerability scanner on frontend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
+          format: 'sarif'
+          output: 'frontend-trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'backend-trivy-results.sarif'
+
+      - name: Upload Trivy frontend results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'frontend-trivy-results.sarif'
+
+  # Deploy to staging
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [build, image-security, e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region us-east-1 --name kitops-staging
+
+      - name: Deploy to staging
+        run: |
+          # Update image tags in Kubernetes manifests
+          sed -i "s|kitops/backend:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}|g" infrastructure/kubernetes/backend.yaml
+          sed -i "s|kitops/frontend:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}|g" infrastructure/kubernetes/frontend.yaml
+          
+          # Apply Kubernetes manifests
+          kubectl apply -f infrastructure/kubernetes/ -n kitops-staging
+          
+          # Wait for deployment to complete
+          kubectl rollout status deployment/kitops-backend -n kitops-staging --timeout=300s
+          kubectl rollout status deployment/kitops-frontend -n kitops-staging --timeout=300s
+
+      - name: Run health checks
+        run: |
+          # Wait for services to be ready
+          kubectl wait --for=condition=ready pod -l app=kitops-backend -n kitops-staging --timeout=300s
+          kubectl wait --for=condition=ready pod -l app=kitops-frontend -n kitops-staging --timeout=300s
+          
+          # Test health endpoints
+          BACKEND_URL=$(kubectl get ingress kitops-ingress -n kitops-staging -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          curl -f http://$BACKEND_URL/api/v1/health || exit 1
+
+  # Deploy to production (manual approval required)
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region us-east-1 --name kitops-production
+
+      - name: Deploy to production
+        run: |
+          # Update image tags in Kubernetes manifests
+          sed -i "s|kitops/backend:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}|g" infrastructure/kubernetes/backend.yaml
+          sed -i "s|kitops/frontend:latest|${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}|g" infrastructure/kubernetes/frontend.yaml
+          
+          # Apply Kubernetes manifests
+          kubectl apply -f infrastructure/kubernetes/ -n kitops-production
+          
+          # Wait for deployment to complete
+          kubectl rollout status deployment/kitops-backend -n kitops-production --timeout=600s
+          kubectl rollout status deployment/kitops-frontend -n kitops-production --timeout=600s
+
+      - name: Run production health checks
+        run: |
+          # Wait for services to be ready
+          kubectl wait --for=condition=ready pod -l app=kitops-backend -n kitops-production --timeout=600s
+          kubectl wait --for=condition=ready pod -l app=kitops-frontend -n kitops-production --timeout=600s
+          
+          # Test health endpoints
+          BACKEND_URL=$(kubectl get ingress kitops-ingress -n kitops-production -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          curl -f http://$BACKEND_URL/api/v1/health || exit 1
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "🚀 Production deployment successful!"
+          echo "Backend: https://api.kitops.com"
+          echo "Frontend: https://app.kitops.com"
+
+  # Notify on failure
+  notify-failure:
+    runs-on: ubuntu-latest
+    needs: [lint, test, security, build, image-security, deploy-staging, deploy-production]
+    if: failure()
+    
+    steps:
+      - name: Notify team of pipeline failure
+        run: |
+          echo "❌ CI/CD Pipeline failed"
+          echo "Please check the workflow logs for details"
+          # Add Slack/Discord/email notification here if needed
