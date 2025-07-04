@@ -41,7 +41,7 @@ resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = var.public_subnet_cidrs[count.index]
   availability_zone       = var.availability_zones[count.index]
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false  # Security: Disable auto-assignment of public IPs
 
   tags = {
     Name        = "${var.project_name}-public-subnet-${count.index + 1}"
@@ -253,6 +253,11 @@ resource "aws_db_instance" "main" {
   backup_window          = "03:00-04:00"
   maintenance_window     = "sun:04:00-sun:05:00"
 
+  # Enable CloudWatch logs and performance insights for security monitoring
+  enabled_cloudwatch_logs_exports = ["postgresql"]
+  performance_insights_enabled    = true
+  performance_insights_retention_period = 7
+
   skip_final_snapshot = var.environment == "development"
   deletion_protection = var.environment == "production"
 
@@ -328,6 +333,25 @@ resource "aws_ecs_cluster" "main" {
   }
 }
 
+# ACM Certificate for HTTPS
+resource "aws_acm_certificate" "main" {
+  domain_name       = var.domain_name
+  validation_method = "DNS"
+
+  subject_alternative_names = [
+    "*.${var.domain_name}"
+  ]
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+  tags = {
+    Name        = "${var.project_name}-certificate"
+    Environment = var.environment
+  }
+}
+
 # Application Load Balancer
 resource "aws_lb" "main" {
   name               = "${var.project_name}-${var.environment}-alb"
@@ -394,10 +418,13 @@ resource "aws_lb_target_group" "backend" {
 }
 
 # Load Balancer Listeners
-resource "aws_lb_listener" "main" {
+# HTTPS Listener (Primary)
+resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.main.arn
-  port              = "80"
-  protocol          = "HTTP"
+  port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  certificate_arn   = aws_acm_certificate.main.arn
 
   default_action {
     type             = "forward"
@@ -405,8 +432,25 @@ resource "aws_lb_listener" "main" {
   }
 }
 
+# HTTP Listener (Redirect to HTTPS)
+resource "aws_lb_listener" "http_redirect" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+}
+
 resource "aws_lb_listener_rule" "api" {
-  listener_arn = aws_lb_listener.main.arn
+  listener_arn = aws_lb_listener.https.arn
   priority     = 100
 
   action {

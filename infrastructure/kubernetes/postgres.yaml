@@ -13,11 +13,24 @@ spec:
       labels:
         app: kitops-postgres
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999  # PostgreSQL user
+        runAsGroup: 999
+        fsGroup: 999
       containers:
       - name: postgres
         image: postgres:15
         ports:
         - containerPort: 5432
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999  # PostgreSQL user
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false  # PostgreSQL needs write access
+          capabilities:
+            drop:
+            - ALL
         env:
         - name: POSTGRES_DB
           valueFrom:

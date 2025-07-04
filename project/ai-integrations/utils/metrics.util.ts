@@ -102,18 +102,46 @@ export function getMetricsRegistry() {
 }
 
 /**
+ * Helper function to check if error is an HTTP client error (4xx)
+ */
+function isClientError(status: number): boolean {
+  return status >= 400 && status < 500;
+}
+
+/**
+ * Helper function to check if error is an HTTP server error (5xx)
+ */
+function isServerError(status: number): boolean {
+  return status >= 500;
+}
+
+/**
+ * Helper function to check if error is a timeout
+ */
+function isTimeoutError(error: any): boolean {
+  return error?.code === 'ECONNABORTED';
+}
+
+/**
+ * Helper function to check if error is a network error
+ */
+function isNetworkError(error: any): boolean {
+  return error?.code === 'ENOTFOUND' || error?.code === 'ECONNREFUSED';
+}
+
+/**
  * Extracts error status for metrics labeling
  */
 function getErrorStatus(error: any): string {
   const status = error?.response?.status || error?.status;
   
   if (status) {
-    if (status >= 400 && status < 500) return 'client_error';
-    if (status >= 500) return 'server_error';
+    if (isClientError(status)) return 'client_error';
+    if (isServerError(status)) return 'server_error';
   }
   
-  if (error?.code === 'ECONNABORTED') return 'timeout';
-  if (error?.code === 'ENOTFOUND' || error?.code === 'ECONNREFUSED') return 'network_error';
+  if (isTimeoutError(error)) return 'timeout';
+  if (isNetworkError(error)) return 'network_error';
   
   return 'unknown_error';
 }

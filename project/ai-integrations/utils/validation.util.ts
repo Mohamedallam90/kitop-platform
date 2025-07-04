@@ -117,45 +117,84 @@ export function validateContractText(text: any): ValidationError[] {
 }
 
 /**
+ * Helper function to validate document type
+ */
+function validateDocumentType(documentType: any): ValidationError | null {
+  if (documentType !== undefined) {
+    if (typeof documentType !== 'string' || documentType.trim().length === 0) {
+      return {
+        field: 'document_type',
+        message: 'Document type must be a non-empty string if provided'
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * Helper function to validate priority
+ */
+function validatePriority(priority: any): ValidationError | null {
+  if (priority !== undefined) {
+    const validPriorities = ['high', 'medium', 'low'];
+    if (!validPriorities.includes(priority)) {
+      return {
+        field: 'priority',
+        message: `Priority must be one of: ${validPriorities.join(', ')}`
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * Helper function to validate include suggestions flag
+ */
+function validateIncludeSuggestions(includeSuggestions: any): ValidationError | null {
+  if (includeSuggestions !== undefined && typeof includeSuggestions !== 'boolean') {
+    return {
+      field: 'include_suggestions',
+      message: 'Include suggestions must be a boolean if provided'
+    };
+  }
+  return null;
+}
+
+/**
+ * Helper function to validate language code
+ */
+function validateLanguage(language: any): ValidationError | null {
+  if (language !== undefined) {
+    if (typeof language !== 'string' || language.length !== 2) {
+      return {
+        field: 'language',
+        message: 'Language must be a 2-character language code if provided'
+      };
+    }
+  }
+  return null;
+}
+
+/**
  * Validates LawGeex review options
  */
 export function validateLawGeexOptions(options: any): ValidationError[] {
   const errors: ValidationError[] = [];
+  
+  // Validate each field using helper functions
+  const validators = [
+    () => validateDocumentType(options.document_type),
+    () => validatePriority(options.priority),
+    () => validateIncludeSuggestions(options.include_suggestions),
+    () => validateLanguage(options.language)
+  ];
 
-  if (options.document_type !== undefined) {
-    if (typeof options.document_type !== 'string' || options.document_type.trim().length === 0) {
-      errors.push({
-        field: 'document_type',
-        message: 'Document type must be a non-empty string if provided'
-      });
+  validators.forEach(validator => {
+    const error = validator();
+    if (error) {
+      errors.push(error);
     }
-  }
-
-  if (options.priority !== undefined) {
-    const validPriorities = ['high', 'medium', 'low'];
-    if (!validPriorities.includes(options.priority)) {
-      errors.push({
-        field: 'priority',
-        message: `Priority must be one of: ${validPriorities.join(', ')}`
-      });
-    }
-  }
-
-  if (options.include_suggestions !== undefined && typeof options.include_suggestions !== 'boolean') {
-    errors.push({
-      field: 'include_suggestions',
-      message: 'Include suggestions must be a boolean if provided'
-    });
-  }
-
-  if (options.language !== undefined) {
-    if (typeof options.language !== 'string' || options.language.length !== 2) {
-      errors.push({
-        field: 'language',
-        message: 'Language must be a 2-character language code if provided'
-      });
-    }
-  }
+  });
 
   return errors;
 }

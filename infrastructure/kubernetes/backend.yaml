@@ -13,11 +13,24 @@ spec:
       labels:
         app: kitops-backend
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       containers:
       - name: backend
         image: kitops/backend:latest
         ports:
         - containerPort: 3001
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false  # May need write access for logs
+          capabilities:
+            drop:
+            - ALL
         env:
         - name: NODE_ENV
           valueFrom:

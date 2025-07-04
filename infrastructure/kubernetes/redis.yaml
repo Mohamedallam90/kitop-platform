@@ -13,11 +13,24 @@ spec:
       labels:
         app: kitops-redis
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999  # Redis user
+        runAsGroup: 999
+        fsGroup: 999
       containers:
       - name: redis
         image: redis:7-alpine
         ports:
         - containerPort: 6379
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999  # Redis user
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false  # Redis needs write access for data
+          capabilities:
+            drop:
+            - ALL
         command:
         - redis-server
         - --appendonly
