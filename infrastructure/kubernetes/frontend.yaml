@@ -13,11 +13,24 @@ spec:
       labels:
         app: kitops-frontend
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       containers:
       - name: frontend
         image: kitops/frontend:latest
         ports:
         - containerPort: 3000
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false  # Next.js may need write access
+          capabilities:
+            drop:
+            - ALL
         env:
         - name: NEXT_PUBLIC_API_URL
           valueFrom:
