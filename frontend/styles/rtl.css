@@ -1,0 +1,386 @@
+/* RTL (Right-to-Left) Support for Arabic Language */
+
+/* Global RTL styles */
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* Typography and Text Direction */
+[dir="rtl"] body {
+  font-family: 'Noto Sans Arabic', 'Cairo', 'Tajawal', system-ui, -apple-system, sans-serif;
+  direction: rtl;
+}
+
+[dir="rtl"] h1, 
+[dir="rtl"] h2, 
+[dir="rtl"] h3, 
+[dir="rtl"] h4, 
+[dir="rtl"] h5, 
+[dir="rtl"] h6 {
+  text-align: right;
+}
+
+[dir="rtl"] p, 
+[dir="rtl"] div, 
+[dir="rtl"] span {
+  text-align: right;
+  direction: rtl;
+}
+
+/* Form Elements */
+[dir="rtl"] input, 
+[dir="rtl"] textarea, 
+[dir="rtl"] select {
+  text-align: right;
+  direction: rtl;
+}
+
+[dir="rtl"] input::placeholder, 
+[dir="rtl"] textarea::placeholder {
+  text-align: right;
+}
+
+/* Margins and Padding Reversals */
+[dir="rtl"] .ml-1 { margin-left: 0; margin-right: 0.25rem; }
+[dir="rtl"] .ml-2 { margin-left: 0; margin-right: 0.5rem; }
+[dir="rtl"] .ml-3 { margin-left: 0; margin-right: 0.75rem; }
+[dir="rtl"] .ml-4 { margin-left: 0; margin-right: 1rem; }
+[dir="rtl"] .ml-5 { margin-left: 0; margin-right: 1.25rem; }
+[dir="rtl"] .ml-6 { margin-left: 0; margin-right: 1.5rem; }
+
+[dir="rtl"] .mr-1 { margin-right: 0; margin-left: 0.25rem; }
+[dir="rtl"] .mr-2 { margin-right: 0; margin-left: 0.5rem; }
+[dir="rtl"] .mr-3 { margin-right: 0; margin-left: 0.75rem; }
+[dir="rtl"] .mr-4 { margin-right: 0; margin-left: 1rem; }
+[dir="rtl"] .mr-5 { margin-right: 0; margin-left: 1.25rem; }
+[dir="rtl"] .mr-6 { margin-right: 0; margin-left: 1.5rem; }
+
+[dir="rtl"] .pl-1 { padding-left: 0; padding-right: 0.25rem; }
+[dir="rtl"] .pl-2 { padding-left: 0; padding-right: 0.5rem; }
+[dir="rtl"] .pl-3 { padding-left: 0; padding-right: 0.75rem; }
+[dir="rtl"] .pl-4 { padding-left: 0; padding-right: 1rem; }
+[dir="rtl"] .pl-5 { padding-left: 0; padding-right: 1.25rem; }
+[dir="rtl"] .pl-6 { padding-left: 0; padding-right: 1.5rem; }
+
+[dir="rtl"] .pr-1 { padding-right: 0; padding-left: 0.25rem; }
+[dir="rtl"] .pr-2 { padding-right: 0; padding-left: 0.5rem; }
+[dir="rtl"] .pr-3 { padding-right: 0; padding-left: 0.75rem; }
+[dir="rtl"] .pr-4 { padding-right: 0; padding-left: 1rem; }
+[dir="rtl"] .pr-5 { padding-right: 0; padding-left: 1.25rem; }
+[dir="rtl"] .pr-6 { padding-right: 0; padding-left: 1.5rem; }
+
+/* Flexbox Direction Reversals */
+[dir="rtl"] .flex-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .space-x-1 > * + * { margin-left: 0; margin-right: 0.25rem; }
+[dir="rtl"] .space-x-2 > * + * { margin-left: 0; margin-right: 0.5rem; }
+[dir="rtl"] .space-x-3 > * + * { margin-left: 0; margin-right: 0.75rem; }
+[dir="rtl"] .space-x-4 > * + * { margin-left: 0; margin-right: 1rem; }
+[dir="rtl"] .space-x-5 > * + * { margin-left: 0; margin-right: 1.25rem; }
+[dir="rtl"] .space-x-6 > * + * { margin-left: 0; margin-right: 1.5rem; }
+
+/* Border Radius Reversals */
+[dir="rtl"] .rounded-l { border-radius: 0 0.375rem 0.375rem 0; }
+[dir="rtl"] .rounded-r { border-radius: 0.375rem 0 0 0.375rem; }
+[dir="rtl"] .rounded-tl { border-top-left-radius: 0; border-top-right-radius: 0.375rem; }
+[dir="rtl"] .rounded-tr { border-top-right-radius: 0; border-top-left-radius: 0.375rem; }
+[dir="rtl"] .rounded-bl { border-bottom-left-radius: 0; border-bottom-right-radius: 0.375rem; }
+[dir="rtl"] .rounded-br { border-bottom-right-radius: 0; border-bottom-left-radius: 0.375rem; }
+
+/* Position Reversals */
+[dir="rtl"] .left-0 { left: auto; right: 0; }
+[dir="rtl"] .left-1 { left: auto; right: 0.25rem; }
+[dir="rtl"] .left-2 { left: auto; right: 0.5rem; }
+[dir="rtl"] .left-4 { left: auto; right: 1rem; }
+
+[dir="rtl"] .right-0 { right: auto; left: 0; }
+[dir="rtl"] .right-1 { right: auto; left: 0.25rem; }
+[dir="rtl"] .right-2 { right: auto; left: 0.5rem; }
+[dir="rtl"] .right-4 { right: auto; left: 1rem; }
+
+/* Text Alignment */
+[dir="rtl"] .text-left { text-align: right; }
+[dir="rtl"] .text-right { text-align: left; }
+
+/* Navigation and Menu Items */
+[dir="rtl"] .nav-item {
+  text-align: right;
+}
+
+[dir="rtl"] .dropdown-menu {
+  left: auto;
+  right: 0;
+}
+
+/* Icons and Arrows */
+[dir="rtl"] .icon-arrow-left::before {
+  content: '→';
+}
+
+[dir="rtl"] .icon-arrow-right::before {
+  content: '←';
+}
+
+[dir="rtl"] .chevron-left {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .chevron-right {
+  transform: scaleX(-1);
+}
+
+/* Tables */
+[dir="rtl"] table {
+  direction: rtl;
+}
+
+[dir="rtl"] th,
+[dir="rtl"] td {
+  text-align: right;
+}
+
+[dir="rtl"] th:first-child,
+[dir="rtl"] td:first-child {
+  border-left: 1px solid #e5e7eb;
+  border-right: none;
+}
+
+[dir="rtl"] th:last-child,
+[dir="rtl"] td:last-child {
+  border-right: 1px solid #e5e7eb;
+  border-left: none;
+}
+
+/* Cards and Containers */
+[dir="rtl"] .card {
+  text-align: right;
+}
+
+[dir="rtl"] .card-header {
+  text-align: right;
+}
+
+[dir="rtl"] .card-body {
+  text-align: right;
+}
+
+/* Buttons */
+[dir="rtl"] .btn {
+  text-align: center;
+}
+
+[dir="rtl"] .btn-group > .btn:first-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+}
+
+[dir="rtl"] .btn-group > .btn:last-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-top-left-radius: 0.375rem;
+  border-bottom-left-radius: 0.375rem;
+}
+
+/* Modals and Overlays */
+[dir="rtl"] .modal-content {
+  text-align: right;
+}
+
+[dir="rtl"] .modal-header {
+  text-align: right;
+}
+
+[dir="rtl"] .modal-body {
+  text-align: right;
+}
+
+[dir="rtl"] .modal-footer {
+  justify-content: flex-start;
+}
+
+/* Tooltips */
+[dir="rtl"] .tooltip {
+  text-align: right;
+}
+
+/* Breadcrumbs */
+[dir="rtl"] .breadcrumb {
+  direction: rtl;
+}
+
+[dir="rtl"] .breadcrumb-item::before {
+  content: '/';
+  margin: 0 0.5rem 0 0.75rem;
+}
+
+/* Progress Bars */
+[dir="rtl"] .progress-bar {
+  direction: ltr; /* Keep progress bars LTR for consistency */
+}
+
+/* Notifications and Alerts */
+[dir="rtl"] .alert {
+  text-align: right;
+}
+
+[dir="rtl"] .notification {
+  text-align: right;
+}
+
+/* Editor and Content Areas */
+[dir="rtl"] .editor {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .content-area {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Chat and Comments */
+[dir="rtl"] .chat-message {
+  text-align: right;
+  direction: rtl;
+}
+
+[dir="rtl"] .comment {
+  text-align: right;
+  direction: rtl;
+}
+
+[dir="rtl"] .comment-author {
+  text-align: right;
+}
+
+/* Contract and Document Viewer */
+[dir="rtl"] .document-viewer {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .document-clause {
+  text-align: right;
+  direction: rtl;
+}
+
+/* Dashboard Widgets */
+[dir="rtl"] .widget {
+  text-align: right;
+}
+
+[dir="rtl"] .widget-title {
+  text-align: right;
+}
+
+[dir="rtl"] .stat-card {
+  text-align: right;
+}
+
+/* Form Layout Reversals */
+[dir="rtl"] .form-row {
+  direction: rtl;
+}
+
+[dir="rtl"] .form-group label {
+  text-align: right;
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+[dir="rtl"] .input-group .input-group-text:first-child {
+  border-left: 1px solid #d1d5db;
+  border-right: none;
+  border-top-left-radius: 0.375rem;
+  border-bottom-left-radius: 0.375rem;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+[dir="rtl"] .input-group .input-group-text:last-child {
+  border-right: 1px solid #d1d5db;
+  border-left: none;
+  border-top-right-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* Sidebar and Navigation */
+[dir="rtl"] .sidebar {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .main-content {
+  margin-left: 0;
+  margin-right: 16rem; /* Adjust based on sidebar width */
+}
+
+/* Search and Filter */
+[dir="rtl"] .search-input {
+  text-align: right;
+  direction: rtl;
+}
+
+[dir="rtl"] .search-icon {
+  left: auto;
+  right: 0.75rem;
+}
+
+[dir="rtl"] .filter-dropdown {
+  left: auto;
+  right: 0;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  [dir="rtl"] .sidebar {
+    right: -16rem; /* Hide sidebar off-screen */
+  }
+  
+  [dir="rtl"] .sidebar.open {
+    right: 0;
+  }
+  
+  [dir="rtl"] .main-content {
+    margin-right: 0;
+  }
+}
+
+/* Custom Arabic Font Loading */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap');
+
+/* Ensure proper font rendering for Arabic */
+[dir="rtl"] * {
+  font-feature-settings: "liga" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+}
+
+/* Fix for Arabic numerals */
+[dir="rtl"] .numbers {
+  direction: ltr;
+  unicode-bidi: bidi-override;
+}
+
+/* Calendar and Date Picker RTL Support */
+[dir="rtl"] .calendar {
+  direction: rtl;
+}
+
+[dir="rtl"] .datepicker {
+  direction: rtl;
+}
+
+[dir="rtl"] .datepicker-days th:first-child {
+  text-align: right;
+}
+
+[dir="rtl"] .datepicker-days th:last-child {
+  text-align: left;
+}
