@@ -1,508 +1,249 @@
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
+# This data block gets our current AWS account ID for use in other resources.
+data "aws_caller_identity" "current" {}
 
-provider "aws" {
-  region = var.aws_region
-}
+# --- Virtual Private Cloud (VPC) ---
+# This defines our foundational network with public and private subnets.
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "5.5.3"
 
-# VPC Configuration
-resource "aws_vpc" "main" {
-  cidr_block           = var.vpc_cidr
+  name = "${var.project_name}-vpc"
+  cidr = var.vpc_cidr
+
+  azs             = ["${var.aws_region}a", "${var.aws_region}b", "${var.aws_region}c"]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+  enable_nat_gateway = true
+  single_nat_gateway = true
+
   enable_dns_hostnames = true
   enable_dns_support   = true
 
   tags = {
-    Name        = "${var.project_name}-vpc"
-    Environment = var.environment
+    Project   = var.project_name
+    ManagedBy = "Terraform"
   }
 }
 
-# Internet Gateway
-resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
-
-  tags = {
-    Name        = "${var.project_name}-igw"
-    Environment = var.environment
-  }
-}
-
-# Public Subnets
-resource "aws_subnet" "public" {
-  count = length(var.availability_zones)
-
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.public_subnet_cidrs[count.index]
-  availability_zone       = var.availability_zones[count.index]
-  map_public_ip_on_launch = false  # Security: Disable auto-assignment of public IPs
-
-  tags = {
-    Name        = "${var.project_name}-public-subnet-${count.index + 1}"
-    Environment = var.environment
-    Type        = "Public"
-  }
-}
-
-# Private Subnets
-resource "aws_subnet" "private" {
-  count = length(var.availability_zones)
-
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = var.private_subnet_cidrs[count.index]
-  availability_zone = var.availability_zones[count.index]
-
-  tags = {
-    Name        = "${var.project_name}-private-subnet-${count.index + 1}"
-    Environment = var.environment
-    Type        = "Private"
-  }
-}
-
-# NAT Gateways
-resource "aws_eip" "nat" {
-  count = length(var.availability_zones)
-
-  domain = "vpc"
-  depends_on = [aws_internet_gateway.main]
-
-  tags = {
-    Name        = "${var.project_name}-nat-eip-${count.index + 1}"
-    Environment = var.environment
-  }
-}
-
-resource "aws_nat_gateway" "main" {
-  count = length(var.availability_zones)
-
-  allocation_id = aws_eip.nat[count.index].id
-  subnet_id     = aws_subnet.public[count.index].id
-
-  tags = {
-    Name        = "${var.project_name}-nat-gateway-${count.index + 1}"
-    Environment = var.environment
-  }
-
-  depends_on = [aws_internet_gateway.main]
-}
-
-# Route Tables
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main.id
-  }
-
-  tags = {
-    Name        = "${var.project_name}-public-rt"
-    Environment = var.environment
-  }
-}
-
-resource "aws_route_table" "private" {
-  count = length(var.availability_zones)
-
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main[count.index].id
-  }
-
-  tags = {
-    Name        = "${var.project_name}-private-rt-${count.index + 1}"
-    Environment = var.environment
-  }
-}
-
-# Route Table Associations
-resource "aws_route_table_association" "public" {
-  count = length(var.availability_zones)
-
-  subnet_id      = aws_subnet.public[count.index].id
-  route_table_id = aws_route_table.public.id
-}
-
-resource "aws_route_table_association" "private" {
-  count = length(var.availability_zones)
-
-  subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private[count.index].id
-}
-
-# Security Groups
-resource "aws_security_group" "alb" {
-  name_prefix = "${var.project_name}-alb-"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name        = "${var.project_name}-alb-sg"
-    Environment = var.environment
-  }
-}
-
-resource "aws_security_group" "ecs" {
-  name_prefix = "${var.project_name}-ecs-"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port       = 3000
-    to_port         = 3000
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
-  }
-
-  ingress {
-    from_port       = 3001
-    to_port         = 3001
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name        = "${var.project_name}-ecs-sg"
-    Environment = var.environment
-  }
-}
-
-resource "aws_security_group" "rds" {
-  name_prefix = "${var.project_name}-rds-"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ecs.id]
-  }
-
-  tags = {
-    Name        = "${var.project_name}-rds-sg"
-    Environment = var.environment
-  }
-}
-
-# RDS Subnet Group
-resource "aws_db_subnet_group" "main" {
-  name       = "${var.project_name}-db-subnet-group"
-  subnet_ids = aws_subnet.private[*].id
-
-  tags = {
-    Name        = "${var.project_name}-db-subnet-group"
-    Environment = var.environment
-  }
-}
-
-# RDS Instance
-resource "aws_db_instance" "main" {
-  identifier = "${var.project_name}-${var.environment}"
-
-  engine         = "postgres"
-  engine_version = "15.4"
-  instance_class = var.db_instance_class
-
-  allocated_storage     = var.db_allocated_storage
-  max_allocated_storage = var.db_max_allocated_storage
-  storage_type          = "gp3"
-  storage_encrypted     = true
-
-  db_name  = var.db_name
-  username = var.db_username
-  password = var.db_password
-
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  db_subnet_group_name   = aws_db_subnet_group.main.name
-
-  backup_retention_period = 7
-  backup_window          = "03:00-04:00"
-  maintenance_window     = "sun:04:00-sun:05:00"
-
-  # Enable CloudWatch logs and performance insights for security monitoring
-  enabled_cloudwatch_logs_exports = ["postgresql"]
-  performance_insights_enabled    = true
-  performance_insights_retention_period = 7
-
-  skip_final_snapshot = var.environment == "development"
-  deletion_protection = var.environment == "production"
-
-  tags = {
-    Name        = "${var.project_name}-database"
-    Environment = var.environment
-  }
-}
-
-# ElastiCache Subnet Group
-resource "aws_elasticache_subnet_group" "main" {
-  name       = "${var.project_name}-cache-subnet-group"
-  subnet_ids = aws_subnet.private[*].id
-
-  tags = {
-    Name        = "${var.project_name}-cache-subnet-group"
-    Environment = var.environment
-  }
-}
-
-# ElastiCache Redis Cluster
-resource "aws_elasticache_replication_group" "main" {
-  replication_group_id       = "${var.project_name}-${var.environment}"
-  description                = "Redis cluster for ${var.project_name}"
-
-  node_type            = var.redis_node_type
-  port                 = 6379
-  parameter_group_name = "default.redis7"
-
-  num_cache_clusters = 2
-  
-  subnet_group_name  = aws_elasticache_subnet_group.main.name
-  security_group_ids = [aws_security_group.redis.id]
-
-  at_rest_encryption_enabled = true
-  transit_encryption_enabled = true
-
-  tags = {
-    Name        = "${var.project_name}-redis"
-    Environment = var.environment
-  }
-}
-
-resource "aws_security_group" "redis" {
-  name_prefix = "${var.project_name}-redis-"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port       = 6379
-    to_port         = 6379
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ecs.id]
-  }
-
-  tags = {
-    Name        = "${var.project_name}-redis-sg"
-    Environment = var.environment
-  }
-}
-
-# ECS Cluster
-resource "aws_ecs_cluster" "main" {
-  name = "${var.project_name}-${var.environment}"
-
-  setting {
-    name  = "containerInsights"
-    value = "enabled"
-  }
-
-  tags = {
-    Name        = "${var.project_name}-cluster"
-    Environment = var.environment
-  }
-}
-
-# ACM Certificate for HTTPS
-resource "aws_acm_certificate" "main" {
-  domain_name       = var.domain_name
-  validation_method = "DNS"
-
-  subject_alternative_names = [
-    "*.${var.domain_name}"
+# --- EKS Kubernetes Cluster ---
+# This defines the main compute engine for our application.
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "20.8.4"
+
+  cluster_name    = "${var.project_name}-cluster"
+  cluster_version = "1.29"
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+
+  # Correctly configure public and private access for the endpoint
+  cluster_endpoint_private_access = true
+  cluster_endpoint_public_access  = true
+
+  # Allow access from your Codespace IP AND the additional IP from variables
+    cluster_endpoint_public_access_cidrs = [
+    # Add your allowed CIDRs here, for example:
+    "0.0.0.0/0"
   ]
 
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  tags = {
-    Name        = "${var.project_name}-certificate"
-    Environment = var.environment
-  }
-}
-
-# Application Load Balancer
-resource "aws_lb" "main" {
-  name               = "${var.project_name}-${var.environment}-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = aws_subnet.public[*].id
-
-  enable_deletion_protection = var.environment == "production"
-
-  tags = {
-    Name        = "${var.project_name}-alb"
-    Environment = var.environment
+   access_entries = {
+  terraform_admin = {
+    kubernetes_groups = ["cluster-admin"]
+    principal_arn     = "arn:aws:iam::042545045755:user/terraform-admin"
+    type              = "STANDARD"
+    username          = "terraform-admin"
   }
 }
 
-# Target Groups
-resource "aws_lb_target_group" "frontend" {
-  name     = "${var.project_name}-frontend-tg"
-  port     = 3000
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
 
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    interval            = 30
-    matcher             = "200"
-    path                = "/"
-    port                = "traffic-port"
-    protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 2
-  }
-
-  tags = {
-    Name        = "${var.project_name}-frontend-tg"
-    Environment = var.environment
-  }
-}
-
-resource "aws_lb_target_group" "backend" {
-  name     = "${var.project_name}-backend-tg"
-  port     = 3001
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    interval            = 30
-    matcher             = "200"
-    path                = "/api/v1/health"
-    port                = "traffic-port"
-    protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 2
-  }
-
-  tags = {
-    Name        = "${var.project_name}-backend-tg"
-    Environment = var.environment
-  }
-}
-
-# Load Balancer Listeners
-# HTTPS Listener (Primary)
-resource "aws_lb_listener" "https" {
-  load_balancer_arn = aws_lb.main.arn
-  port              = "443"
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
-  certificate_arn   = aws_acm_certificate.main.arn
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.frontend.arn
-  }
-}
-
-# HTTP Listener (Redirect to HTTPS)
-resource "aws_lb_listener" "http_redirect" {
-  load_balancer_arn = aws_lb.main.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    type = "redirect"
-
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
+  # EKS Managed Node Group - This is where our application pods will run
+  eks_managed_node_groups = {
+    general_purpose = {
+      instance_types = ["t3.medium"]
+      min_size       = 1
+      max_size       = 3
+      desired_size   = 2
     }
   }
-}
 
-resource "aws_lb_listener_rule" "api" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 100
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.backend.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/api/*"]
-    }
-  }
-}
-
-# S3 Bucket for file storage
-resource "aws_s3_bucket" "storage" {
-  bucket = "${var.project_name}-${var.environment}-storage-${random_string.bucket_suffix.result}"
+  # Inside module "eks"
 
   tags = {
-    Name        = "${var.project_name}-storage"
-    Environment = var.environment
+    Project   = var.project_name
+    ManagedBy = "Terraform"
+  }
+
+  # THIS IS THE CRITICAL BOOTSTRAP CONFIGURATION
+  # bootstrap_cluster_creator_admin_permissions = true
+
+} # This is the closing brace for module "eks"
+
+# --- Outputs ---
+# These outputs provide useful information back to us after the apply is complete.
+
+output "vpc_id" {
+  description = "The ID of the VPC"
+  value       = module.vpc.vpc_id
+}
+
+output "public_subnet_ids" {
+  description = "List of IDs of public subnets"
+  value       = module.vpc.public_subnets
+}
+
+output "private_subnet_ids" {
+  description = "List of IDs of private subnets"
+  value       = module.vpc.private_subnets
+}
+
+output "eks_cluster_name" {
+  description = "The name of the EKS cluster"
+  value       = module.eks.cluster_name
+}
+
+output "eks_cluster_endpoint" {
+  description = "The endpoint for the EKS cluster's API server"
+  value       = module.eks.cluster_endpoint
+}
+# --- ECR (Elastic Container Registry) ---
+# A private registry to store our application's Docker images.
+
+resource "aws_ecr_repository" "backend" {
+  name                 = "${var.project_name}/backend"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    Project   = var.project_name
+    ManagedBy = "Terraform"
   }
 }
 
-resource "random_string" "bucket_suffix" {
-  length  = 8
-  special = false
-  upper   = false
-}
+resource "aws_ecr_repository" "frontend" {
+  name                 = "${var.project_name}/frontend"
+  image_tag_mutability = "MUTABLE"
 
-resource "aws_s3_bucket_versioning" "storage" {
-  bucket = aws_s3_bucket.storage.id
-  versioning_configuration {
-    status = "Enabled"
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    Project   = var.project_name
+    ManagedBy = "Terraform"
   }
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "storage" {
-  bucket = aws_s3_bucket.storage.id
+# --- RDS PostgreSQL Database ---
+# A managed, production-grade database for our application.
 
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
+resource "aws_db_instance" "main_db" {
+  identifier_prefix      = "${var.project_name}-"
+  engine                 = "postgres"
+  engine_version         = "15"
+  instance_class         = "db.t3.micro" # A small size, good for the Free Tier
+  allocated_storage      = 20            # In GB
+
+  db_name                = "${var.project_name}_db"
+  username               = "db_admin"
+  password               = random_password.db_password.result # Securely generated password
+
+  db_subnet_group_name   = aws_db_subnet_group.main_db_subnet_group.name
+  vpc_security_group_ids = [aws_security_group.db_sg.id]
+
+  skip_final_snapshot    = true # Set to false for production
+  publicly_accessible    = false
+
+  tags = {
+    Project   = var.project_name
+    ManagedBy = "Terraform"
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "storage" {
-  bucket = aws_s3_bucket.storage.id
+# --- Database Security ---
 
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+# A security group that only allows traffic from our EKS nodes to the database.
+resource "aws_security_group" "db_sg" {
+  name        = "${var.project_name}-db-sg"
+  description = "Allow traffic from EKS nodes to the database"
+  vpc_id      = module.vpc.vpc_id
+
+  # Ingress rule: Allow PostgreSQL traffic from the EKS node security group
+  ingress {
+    from_port       = 5432 # PostgreSQL port
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [module.eks.node_security_group_id]
+  }
+
+  # Egress rule: Allow all outbound traffic (standard)
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name      = "${var.project_name}-db-sg"
+    Project   = var.project_name
+    ManagedBy = "Terraform"
+  }
+}
+
+# --- Secret Password Generation ---
+
+# A resource to generate a secure, random password for the database.
+resource "random_password" "db_password" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&'()*+,-./:;<=>?@[]^_`{|}~"
+}
+
+# Store the generated password securely in AWS Secrets Manager.
+resource "aws_secretsmanager_secret" "db_password_secret" {
+  name = "${var.project_name}/db_password"
+}
+
+resource "aws_secretsmanager_secret_version" "db_password_secret_version" {
+  secret_id     = aws_secretsmanager_secret.db_password_secret.id
+  secret_string = random_password.db_password.result
+}
+
+# --- New Outputs ---
+
+output "backend_ecr_repo_url" {
+  description = "The URL of the backend ECR repository"
+  value       = aws_ecr_repository.backend.repository_url
+}
+
+output "frontend_ecr_repo_url" {
+  description = "The URL of the frontend ECR repository"
+  value       = aws_ecr_repository.frontend.repository_url
+}
+
+output "db_endpoint" {
+  description = "The endpoint of the RDS database instance"
+  value       = aws_db_instance.main_db.endpoint
+}
+
+# Explicitly create a DB subnet group using the private subnets from our VPC.
+resource "aws_db_subnet_group" "main_db_subnet_group" {
+  name       = "${var.project_name}-main-subnet-group"
+  subnet_ids = module.vpc.private_subnets
+
+  tags = {
+    Name      = "${var.project_name}-main-subnet-group"
+    Project   = var.project_name
+    ManagedBy = "Terraform"
+  }
+}
+
+output "db_password_secret_arn" {
+  description = "The ARN of the secret containing the database password"
+  value       = aws_secretsmanager_secret.db_password_secret.arn
 }
