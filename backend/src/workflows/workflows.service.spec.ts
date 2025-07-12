@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, FindOneOptions } from 'typeorm';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { WorkflowsService } from './workflows.service';
 import { Workflow, WorkflowStatus } from './entities/workflow.entity';
@@ -13,7 +13,7 @@ describe('WorkflowsService', () => {
     create: jest.fn(),
     save: jest.fn(),
     find: jest.fn(),
-    findOne: jest.fn(),
+    findOne: jest.fn().mockImplementation((options: FindOneOptions<Workflow>) => Promise.resolve(mockWorkflow)),
     remove: jest.fn(),
   };
 
@@ -57,7 +57,7 @@ describe('WorkflowsService', () => {
     };
 
     it('should create a workflow successfully', async () => {
-      mockRepository.create.mockReturnValue(mockWorkflow);
+      mockRepository.create.mockReturnValue({...mockWorkflow});
       mockRepository.save.mockResolvedValue(mockWorkflow);
 
       const result = await service.create(createWorkflowDto, 'user-123');
@@ -90,7 +90,7 @@ describe('WorkflowsService', () => {
     it('should return a workflow when found', async () => {
       mockRepository.findOne.mockResolvedValue(mockWorkflow);
 
-      const result = await service.findOne('workflow-123', 'user-123');
+      const result = await service.findOne('123e4567-e89b-12d3-a456-426614174000', 'user-123');
 
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'workflow-123', userId: 'user-123' },

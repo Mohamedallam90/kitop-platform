@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
+import { CancellationToken } from './utils/cancellation.util';
+import { ValidationException } from './utils/validation.util';
 
 export interface LawGeexIssue {
   id: string;
@@ -76,6 +78,7 @@ export class LawGeexService {
   async reviewContractWithLawGeex(
     documentContent: string,
     options: LawGeexReviewOptions = {},
+    cancellationToken?: CancellationToken
   ): Promise<LawGeexReviewResult> {
     this.logger.log('Initiating contract review with LawGeex');
 
@@ -84,6 +87,11 @@ export class LawGeexService {
     }
 
     try {
+      // Check if operation was cancelled
+      if (cancellationToken?.isCancelled) {
+        throw new Error('Operation was cancelled');
+      }
+      
       const requestPayload = {
         document: documentContent,
         document_type: options.document_type || 'contract',
@@ -91,7 +99,11 @@ export class LawGeexService {
         include_suggestions: options.include_suggestions ?? true,
         language: options.language || 'en',
       };
+      
+      // Create abort controller for cancellation
+      const abortController = cancellationToken ? { signal: cancellationToken.abortSignal } : {};
 
+        ...abortController,
       const response = await this.axiosInstance.post('/v1/review', requestPayload);
 
       this.logger.log(`Contract review completed. Document ID: ${response.data.document_id}`);
@@ -131,6 +143,7 @@ export class LawGeexService {
   async checkReviewStatus(documentId: string): Promise<{
     status: 'completed' | 'processing' | 'failed';
     progress: number;
+    estimated_completion: Date | null;
     estimated_completion: Date | null;
   }> {
     if (!documentId || typeof documentId !== 'string') {

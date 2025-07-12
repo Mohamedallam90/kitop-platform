@@ -1,11 +1,12 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
 import compression from 'compression';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
   // Security middleware
@@ -16,6 +17,7 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   });
 
   // Global validation pipe
@@ -24,6 +26,7 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      transformOptions: { enableImplicitConversion: true },
     }),
   );
 
@@ -33,6 +36,7 @@ async function bootstrap() {
   // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('KitOps API')
+    .setVersion('1.0')
     .setDescription('AI-powered workflow automation platform API')
     .setVersion('1.0')
     .addBearerAuth()
@@ -44,8 +48,8 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
 
-  console.log(`🚀 KitOps API is running on: http://localhost:${port}`);
-  console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+  logger.log(`🚀 KitOps API is running on: http://localhost:${port}`);
+  logger.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();

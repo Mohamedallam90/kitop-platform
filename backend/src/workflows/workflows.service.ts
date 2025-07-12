@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsWhere } from 'typeorm';
 import { Workflow, WorkflowStatus } from './entities/workflow.entity';
 import { CreateWorkflowDto } from './dto/create-workflow.dto';
 import { UpdateWorkflowDto } from './dto/update-workflow.dto';
@@ -25,7 +25,7 @@ export class WorkflowsService {
     userId: string,
     filters?: { status?: string; category?: string },
   ): Promise<Workflow[]> {
-    const where: any = { userId };
+    const where: FindOptionsWhere<Workflow> = { userId };
 
     if (filters?.status) {
       where.status = filters.status;
@@ -73,7 +73,7 @@ export class WorkflowsService {
     id: string,
     executeWorkflowDto: any,
     userId: string,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{ success: boolean; message: string; executionId?: string }> {
     const workflow = await this.findOne(id, userId);
 
     if (workflow.status !== WorkflowStatus.ACTIVE) {
@@ -84,9 +84,15 @@ export class WorkflowsService {
       // Update execution metadata
       workflow.executionCount += 1;
       workflow.lastExecutedAt = new Date();
+      
+      // Generate execution ID for tracking
+      const executionId = `exec-${Date.now()}-${workflow.id.substring(0, 8)}`;
+      
       await this.workflowRepository.save(workflow);
 
       // TODO: Implement actual workflow execution logic
+      // This would involve processing workflow.steps and executing each step
+      // For now, we'll simulate a successful execution
       // This would involve processing workflow.steps and executing each step
 
       return {

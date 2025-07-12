@@ -1,9 +1,11 @@
 import './globals.css'
+import './styles/rtl.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Toaster } from 'react-hot-toast'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { initializeLanguage } from '@/components/LanguageSwitcher'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,8 +22,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // Initialize language on the server
+  const language = typeof window !== 'undefined' ? initializeLanguage() : { code: 'en', dir: 'ltr' };
+  
   return (
-    <html lang="en">
+    <html lang={language.code} dir={language.dir}>
       <body className={inter.className}>
         <div className="min-h-screen bg-gray-50">
           <Header />

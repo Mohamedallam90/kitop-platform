@@ -10,9 +10,11 @@ import {
   Settings, 
   LogOut, 
   Menu,
-  X
+  X,
+  Globe
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -55,6 +57,8 @@ export const Header: React.FC = () => {
           {/* Right Side */}
           <div className="flex items-center space-x-4">
             {/* Notifications */}
+            <LanguageSwitcher variant="toggle" />
+            
             <button className="relative p-2 text-gray-400 hover:text-gray-600">
               <Bell className="w-6 h-6" />
               <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>

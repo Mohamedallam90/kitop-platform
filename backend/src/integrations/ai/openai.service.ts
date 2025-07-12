@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
+import { CancellationToken } from './utils/cancellation.util';
+import { ValidationException } from './utils/validation.util';
 
 export interface ContractGenerationOptions {
   contractType: string;
@@ -45,12 +47,23 @@ export class OpenAIService {
     this.openai = new OpenAI({
       apiKey,
     });
+    
+    if (!apiKey) {
+      throw new Error('OpenAI API key is not configured. Please set OPENAI_API_KEY environment variable.');
+    }
   }
 
-  async generateContractDraft(options: ContractGenerationOptions): Promise<ContractDraftResult> {
+  async generateContractDraft(
+    options: ContractGenerationOptions,
+    cancellationToken?: CancellationToken
+  ): Promise<ContractDraftResult> {
     this.logger.log(`Generating contract draft for type: ${options.contractType}`);
+    
+    // Validate inputs
+    this.validateContractGenerationOptions(options);
 
     try {
+      cancellationToken?.throwIfCancelled();
       const prompt = this.buildContractPrompt(options);
 
       const response = await this.openai.chat.completions.create({
@@ -71,6 +84,8 @@ export class OpenAIService {
         top_p: 1,
         frequency_penalty: 0,
         presence_penalty: 0,
+        // Add abort signal if cancellation token is provided
+        ...(cancellationToken && { signal: cancellationToken.abortSignal }),
       });
 
       const content = response.choices[0]?.message?.content;
@@ -104,8 +119,12 @@ export class OpenAIService {
     }
   }
 
-  async analyzeContractLanguage(contractText: string): Promise<AnalysisResult> {
+  async analyzeContractLanguage(
+    contractText: string,
+    cancellationToken?: CancellationToken
+  ): Promise<AnalysisResult> {
     this.logger.log('Analyzing contract language');
+    this.validateContractText(contractText);
 
     if (!contractText || contractText.trim().length === 0) {
       throw new Error('Contract text is required for analysis');
@@ -113,6 +132,8 @@ export class OpenAIService {
 
     try {
       const response = await this.openai.chat.completions.create({
+        // Add abort signal if cancellation token is provided
+        ...(cancellationToken && { signal: cancellationToken.abortSignal }),
         model: 'gpt-4',
         messages: [
           {
@@ -148,6 +169,57 @@ export class OpenAIService {
       throw new Error(
         `Contract analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       );
+    }
+  }
+
+  private validateContractGenerationOptions(options: ContractGenerationOptions): void {
+    const errors = [];
+
+    // Contract type validation
+    if (!options.contractType || typeof options.contractType !== 'string' || options.contractType.trim().length === 0) {
+      errors.push({
+        field: 'contractType',
+        message: 'Contract type is required'
+      });
+    }
+
+    // Parties validation
+    if (!Array.isArray(options.parties)) {
+      errors.push({
+        field: 'parties',
+        message: 'Parties must be an array'
+      });
+    } else if (options.parties.length < 2) {
+      errors.push({
+        field: 'parties',
+        message: 'At least two parties are required'
+      });
+    }
+
+    // Key terms validation
+    if (!Array.isArray(options.keyTerms) || options.keyTerms.length === 0) {
+      errors.push({
+        field: 'keyTerms',
+        message: 'Key terms are required'
+      });
+    }
+
+    // Jurisdiction validation
+    if (!options.jurisdiction || typeof options.jurisdiction !== 'string' || options.jurisdiction.trim().length === 0) {
+      errors.push({
+        field: 'jurisdiction',
+        message: 'Jurisdiction is required'
+      });
+    }
+
+    if (errors.length > 0) {
+      throw new ValidationException(errors);
+    }
+  }
+
+  private validateContractText(text: string): void {
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
+      throw new Error('Contract text is required for analysis');
     }
   }
 

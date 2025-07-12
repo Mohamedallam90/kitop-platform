@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
+import { APP_GUARD } from '@nestjs/core';
 
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -13,6 +14,9 @@ import { DocumentsModule } from './documents/documents.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { DatabaseModule } from './database/database.module';
+import { MarketPricingModule } from './market-pricing/market-pricing.module';
+import { SignatureModule } from './signature/signature.module';
+import { MonitoringModule } from './monitoring/monitoring.module';
 
 @Module({
   imports: [
@@ -35,8 +39,23 @@ import { DatabaseModule } from './database/database.module';
     IntegrationsModule,
     PaymentsModule,
     DocumentsModule,
+    UsersModule,
+    WorkflowsModule,
+    ProjectsModule,
+    IntegrationsModule,
+    PaymentsModule,
+    DocumentsModule,
     NotificationsModule,
     AnalyticsModule,
+    MarketPricingModule,
+    SignatureModule,
+    MonitoringModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}
