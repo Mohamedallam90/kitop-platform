@@ -197,14 +197,14 @@ export class DataAnonymizationService {
       
       case 'phone':
         const areaCode = 200 + (seed % 700);
-        const number = 1000000 + (seed % 9000000);
-        return `+1-${areaCode}-${number}`;
+        const largeNumber = 1000000 + (seed % 9000000);
+        return `+1-${areaCode}-${largeNumber}`;
       
       case 'address':
         const streets = ['Main St', 'Oak Ave', 'First St', 'Second Ave', 'Park Rd'];
         const street = streets[seed % streets.length];
-        const number = 100 + (seed % 9900);
-        return `${number} ${street}`;
+        const smallNumber = 100 + (seed % 9900);
+        return `${smallNumber} ${street}`;
       
       default:
         return `pseudo_${hash}`;

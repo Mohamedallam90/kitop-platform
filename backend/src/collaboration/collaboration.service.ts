@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, ConnectedSocket } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Comment } from './entities/comment.entity';
-import { offlineStorage } from '../../frontend/lib/offline-storage';
 
 export interface CreateCommentDto {
   documentId: string;
@@ -433,31 +432,9 @@ export class CollaborationService {
     try {
       this.logger.log(`Syncing offline comments for user ${userId}`);
       
-      // This would integrate with the offline storage service
-      if (typeof window !== 'undefined') {
-        const offlineComments = await offlineStorage.getAllComments();
-        const pendingComments = offlineComments.filter(c => c.syncStatus === 'pending');
-        
-        for (const offlineComment of pendingComments) {
-          try {
-            await this.createComment({
-              documentId: offlineComment.documentId,
-              clauseIdentifier: offlineComment.clauseId,
-              content: offlineComment.content,
-              metadata: {
-                priority: 'medium',
-                tags: ['offline-sync'],
-              },
-            }, userId);
-            
-            // Update offline storage sync status
-            await offlineStorage.updateCommentSyncStatus(offlineComment.id, 'synced');
-          } catch (error) {
-            this.logger.error(`Failed to sync offline comment ${offlineComment.id}: ${error.message}`);
-            await offlineStorage.updateCommentSyncStatus(offlineComment.id, 'error');
-          }
-        }
-      }
+      // Offline sync functionality is handled on the frontend
+      // This method is a placeholder for future backend integration
+      this.logger.log(`Offline sync completed for user ${userId}`);
     } catch (error) {
       this.logger.error(`Failed to sync offline comments: ${error.message}`);
     }

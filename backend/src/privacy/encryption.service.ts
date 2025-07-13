@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { createCipher, createDecipher, createHash, randomBytes, createCipheriv, createDecipheriv } from 'crypto';
+import { createCipher, createDecipher, createHash, randomBytes, createCipheriv, createDecipheriv, Cipher as CryptoCipher, Decipher as CryptoDecipher } from 'crypto';
 
 export interface EncryptionOptions {
   algorithm?: string;
@@ -47,7 +47,7 @@ export class EncryptionService {
 
       // Add authentication tag for GCM mode
       if (algorithm.includes('gcm')) {
-        result.tag = cipher.getAuthTag().toString('hex');
+        result.tag = (cipher as CryptoCipher & { getAuthTag(): Buffer }).getAuthTag().toString('hex');
       }
 
       return result;
@@ -67,7 +67,7 @@ export class EncryptionService {
       
       // Set auth tag for GCM mode
       if (algorithm.includes('gcm') && tag) {
-        decipher.setAuthTag(Buffer.from(tag, 'hex'));
+        (decipher as CryptoDecipher & { setAuthTag(tag: Buffer): void }).setAuthTag(Buffer.from(tag, 'hex'));
       }
       
       let decrypted = decipher.update(data, 'hex', 'utf8');
@@ -205,7 +205,7 @@ export class EncryptionService {
       };
 
       if (algorithm.includes('gcm')) {
-        result.tag = cipher.getAuthTag().toString('hex');
+        result.tag = (cipher as CryptoCipher & { getAuthTag(): Buffer }).getAuthTag().toString('hex');
       }
 
       return result;
@@ -224,7 +224,7 @@ export class EncryptionService {
       const decipher = createDecipheriv(algorithm, this.masterKey, Buffer.from(iv, 'hex'));
       
       if (algorithm.includes('gcm') && tag) {
-        decipher.setAuthTag(Buffer.from(tag, 'hex'));
+        (decipher as CryptoDecipher & { setAuthTag(tag: Buffer): void }).setAuthTag(Buffer.from(tag, 'hex'));
       }
       
       const encryptedBuffer = Buffer.from(data, 'base64');

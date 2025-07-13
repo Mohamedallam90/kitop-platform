@@ -183,7 +183,7 @@ export class SignatureService {
         {
           status: webhookData.status as any,
           lastUpdated: new Date(),
-          webhookData: webhookData,
+          webhookData: JSON.stringify(webhookData),
         }
       );
 
